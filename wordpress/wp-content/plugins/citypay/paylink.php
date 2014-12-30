@@ -10,10 +10,21 @@
 
 defined('ABSPATH') or die;
 
+define(CP_PAYLINK_DISPATCHER, 'cp_paylink');
 define(CP_PAYLINK_MERCHANT_ID, 'cp_paylink_merchant_id');
 define(CP_PAYLINK_LICENCE_KEY, 'cp_paylink_licence_key');
 define(CP_PAYLINK_TEST_MODE, 'cp_paylink_test_mode');
 define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
+
+require_once('includes/stack.php');
+
+function cp_paylink_config_stack() {
+    static $cp_paylink_config_stack = NULL;
+    if (is_null($cp_paylink_config_stack)) {
+        $cp_paylink_config_stack = new cp_paylink_config_stack();
+    }
+    return $cp_paylink_config_stack;
+}
 
 function cp_paylink_enqueue_styles() {
     wp_enqueue_style('parent-style', get_template_directory_uri().'/style.css');
@@ -25,70 +36,181 @@ function cp_paylink_enqueue_javascript() {
     wp_enqueue_script('paylink', 'https://secure.citypay.com/paylink3/js/paylink-api-1.0.0.min.js', array('jquery'));
 }
 
-function cp_paylink_send_cors_headers($headers)
-{
+function cp_paylink_send_cors_headers($headers) {
     error_log("send_cors_headers: ".$headers);
     $headers['Access-Control-Allow-Origin'] = "https://secure.citypay.com";
     return $headers;
 }
 
-
-function cp_paylink_payform($attrs) {
+function cp_paylink_payform_field_config_sort($v1, $v2) {
+    $v1_order = (int) $v1['order'];
+    $v2_order = (int) $v2['order'];
     
+    if ($v1_order> $v2_order) {
+        return 1;
+    } else if ($v1_order < $v2_order) {
+        return -1;
+    } else return 0;
+}
+
+function cp_paylink_payform_field($attrs) {
+    $a = shortcode_atts(
+            array(
+                    'name' => '',
+                    'label' => '',
+                    'placeholder' => '',
+                    'pattern' => '',
+                    'order' => 99
+                ),
+            $attrs
+        );
+        
+    cp_paylink_config_stack()->set(
+            $a['name'],
+            array(
+                    'label' => $a['label'],
+                    'placeholder' => $a['placeholder'],
+                    'pattern' => $a['pattern'],
+                    'order' => $a['order']
+                )
+        );
+    
+    return;
+}
+
+function cp_paylink_payform($attrs, $content = null) {
     $a = shortcode_atts(
             array('form' => ''),
             $attrs
         );
     
-    $mode_option_value = get_option(CP_PAYLINKJS_PAYFORM_MODE_OPTION_NAME, true);
-    if ($mode_option_value) {
-        $domain_key = get_option(CP_PAYLINKJS_PAYFORM_TEST_DOMAIN_KEY_OPTION_NAME, '');
-    } else {
-        $domain_key = get_option(CP_PAYLINKJS_PAYFORM_LIVE_DOMAIN_KEY_OPTION_NAME, '');
+    //
+    //  If shortcode contains nested shortcodes, process these before
+    //  processing the immediate form.
+    //
+    if (!is_null($content)) {
+        cp_paylink_config_stack()->push_new();
+        $content = do_shortcode($content);
     }
-      
-    if (is_single() or is_page())
+ 
+    if (is_single() || is_page())
     {
-        $s = '<div id="cp_paylinkjs_payform"></div><script type="text/javascript">$ = jQuery;';
+        // if a configuration has been specified
+        $current_url = add_query_arg($wp->query_string, '', home_url($wp->request));
+        $s = '<form role="form" id="billPaymentForm" class="form-horizontal" method="POST" action="'
+           .add_query_arg('cp_paylink', 'pay', $current_url)
+           .'"><input type="hidden" name="cp_paylink_pay" value="Y">';
+                
+        $config = cp_paylink_config_stack()->peek();
+        // sort config according to the order attribute
         
-        $s .= 'var paylinkJs = new Paylink("'
-            .$domain_key
-            .'", {form: {';
+        usort($config, cp_paylink_payform_field_config_sort);
         
-        if ($a['form'] == '')
-        {
-            $s .= 'name: {label: "Full Name", order: 1},'
-                .'identifier: { placeholder: "AC9999",'
-                .'pattern: "[A-Za-z]{2}[0-9]{4}",'
-                .'label: "Account No", order: 2}, '
-                .'amount: {label: "Total Amount", order: 3}';
+        foreach ($config as $key => $value) {
+            $s .= '<div class="form-group">'
+                .'<label class="com-sm-2 control-label">'
+                .$value['label']
+                .'</label><div class="col-sm-10"><input class="form-control" name="" type="text">'
+                .'</div></div>';
         }
-        else
-        {
-            $s .= $a['form'];
-        }
-                        
-        $s .= '}});paylinkJs.billPayment("#cp_paylinkjs_payform");</script>';
         
-                    
-        return $s;
+        $s .= '<button type="submit">Pay</button></form>';
+    }
+    else
+    {
+        $s = '';
+    }
+        
+    if (!is_null($content))
+    {
+        cp_paylink_config_stack()->pop();
     }
     
-    
-    return 'other';
+    return $s;
 }
 
+function cp_paylink_validate_identifier($pattern, $value) {
+    return 'tia-maria-'.$value;
+}
 
-function cp_paylink_settings_link($links)
-{
+function cp_paylink_validate_amount($value) {
+    return 2300;
+}
+
+function cp_paylink_action_pay() {
+    require_once('includes/logger.php');
+    require_once('includes/paylink.php');
+
+    $merchant_id = get_option(CP_PAYLINK_MERCHANT_ID);
+    $licence_key = get_option(CP_PAYLINK_LICENCE_KEY);
+    $test_mode = get_option(CP_PAYLINK_TEST_MODE);
+
+    $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_REQUIRE_SCALAR);
+    $identifier = cp_paylink_validate_identifier('', $identifier_in);
+
+    $amount_in = filter_input(INPUT_POST, 'amount', FILTER_REQUIRE_SCALAR);
+    $amount = cp_paylink_validate_amount($amount_in);
+
+    $current_url = add_query_arg($wp->query_string, '', home_url($wp->request));
+    $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
+    $return_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'success', $current_url);
+    $cancel_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'cancel', $current_url);
+
+    $x = new CityPay_PayLink(new logger());
+    $x->setRequestCart(
+            $merchant_id,
+            $licence_key,
+            $identifier,
+            $amount
+        );
+    $x->setRequestClient('Wordpress', get_bloginfo('version', 'raw'));
+    $x->setRequestConfig(
+            $test_mode,
+            $postback_url,
+            $return_url,
+            $cancel_url
+        );
+    try {
+        $url = $x->getPaylinkURL();
+        wp_redirect($url);
+        exit;
+    } catch (Exception $ex) {
+        echo $ex;
+    }
+}
+
+function cp_paylink_dispatcher() {
+    //
+    if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
+        $action = $_GET[CP_PAYLINK_DISPATCHER];
+        switch ($action)
+        {
+        case 'pay':
+            cp_paylink_action_pay();
+            break;
+
+        case 'postback':
+            break;
+
+        case 'success':
+            break;
+
+        case 'cancel':
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+function cp_paylink_settings_link($links) {
     $settings_link = '<a href="options-general.php?page=cp-paylink-settings">Settings</a>';
     array_unshift($links, $settings_link);
     return $links;
 }
 
-
-function cp_paylink_administration()
-{
+function cp_paylink_administration() {
     add_options_page( 
         __('CityPay PayLink WP', 'cp-paylink-wp'),
         __('CityPay PayLink WP', 'cp-paylink-wp'),
@@ -98,9 +220,7 @@ function cp_paylink_administration()
     );
 }
 
-
-function cp_paylink_settings_page()
-{
+function cp_paylink_settings_page() {
     if (!current_user_can('manage_options')) {
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
@@ -185,9 +305,12 @@ add_action('wp_enqueue_scripts', 'cp_paylink_enqueue_styles');
 add_action('wp_enqueue_scripts', 'cp_paylink_enqueue_javascript');
 add_action('admin_menu', 'cp_paylink_administration');
 
+add_action('init', 'cp_paylink_dispatcher');
+
 $plugin = plugin_basename(__FILE__);
 
 //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
 add_filter('plugin_action_links_'.$plugin, 'cp_paylink_settings_link');
 
-add_shortcode('citypay-paylink-payform', 'cp_paylink_payform');
+add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
+add_shortcode('citypay-payform', 'cp_paylink_payform');
