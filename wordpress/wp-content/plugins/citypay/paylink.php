@@ -16,6 +16,8 @@ define(CP_PAYLINK_LICENCE_KEY, 'cp_paylink_licence_key');
 define(CP_PAYLINK_TEST_MODE, 'cp_paylink_test_mode');
 define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
     
+define(CP_PAYLINK_EMAIL_REGEX, '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)$/');
+
 define(CP_PAYLINK_NO_ERROR, 0x00);
 define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR, 0x01);
 define(CP_PAYLINK_AMOUNT_FIELD_PARSE_ERROR, 0x01);
@@ -52,11 +54,9 @@ function cp_paylink_add_query_vars_filter($vars) {
 }
 
 function cp_paylink_payform_field_config_sort($v1, $v2) {   
-    if ($v1->order > $v2->order) {
-        return 1;
-    } else if ($v1->order < $v2->order) {
-        return -1;
-    } else return 0;
+    if ($v1->order > $v2->order) { return 1; }
+    else if ($v1->order < $v2->order) { return -1; }
+    else { return 0; }
 }
         
 class cp_paylink_field {
@@ -129,6 +129,14 @@ class cp_paylink_amount_field extends cp_paylink_field {
     }
 }
 
+class cp_paylink_email_field extends cp_paylink_field {
+    public function parse($value_in, &$value_out) {
+        $r = preg_match(CP_PAYLINK_EMAIL_REGEX, $value_in);
+        if ($r) { $value_out = $value_in; }
+        return $r;
+    }
+}
+
 class cp_paylink_text_field extends cp_paylink_field {
     public $pattern;
    
@@ -161,6 +169,10 @@ function cp_paylink_payform_field($attrs) {
     {
     case 'amount':
         $field = new cp_paylink_amount_field($a['name'], $a['label'], $a['placeholder'], $a['order']);
+        break;
+    
+    case 'email-address':
+        $field = new cp_paylink_email_field($a['name'], $a['label'], $a['placeholder'], $a['order']);
         break;
         
     case 'text':
@@ -530,15 +542,16 @@ function cp_paylink_action_pay() {
         $f_valid &= $f->parse($amount_in, $amount_out);
     }
     
-        /*echo '<pre>';
+        echo '<pre>';
         echo 'identifier_in = "'.$identifier_in.'"; ';
         echo 'identifier_out = "'.$identifier_out.'"; ';
+        echo 'email_in = "'.$email_in.'"; ';
         echo 'email_out = "'.$email_out.'"; ';
         echo 'name_in = "'.$name_in.'"; ';
         echo 'name_out = "'.$name_out.'"; ';
         echo 'amount_out = "'.$amount_out.'";';
         echo '</pre>';
-        exit;*/
+        exit;
     
     if (!$f_valid) { return; }
    
