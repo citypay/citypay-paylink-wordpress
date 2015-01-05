@@ -15,6 +15,10 @@ define(CP_PAYLINK_MERCHANT_ID, 'cp_paylink_merchant_id');
 define(CP_PAYLINK_LICENCE_KEY, 'cp_paylink_licence_key');
 define(CP_PAYLINK_TEST_MODE, 'cp_paylink_test_mode');
 define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
+    
+define(CP_PAYLINK_NO_ERROR, 0x00);
+define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR, 0x01);
+define(CP_PAYLINK_AMOUNT_FIELD_PARSE_ERROR, 0x01);
 
 require_once('includes/stack.php');
 
@@ -26,15 +30,15 @@ function cp_paylink_config_stack() {
     return $cp_paylink_config_stack;
 }
 
-function cp_paylink_enqueue_styles() {
+/*function cp_paylink_enqueue_styles() {
     wp_enqueue_style('parent-style', get_template_directory_uri().'/style.css');
     wp_enqueue_style('child-style', get_stylesheet_uri(), array('parent-style'));
-}
+}*/
 
-function cp_paylink_enqueue_javascript() {
+/*function cp_paylink_enqueue_javascript() {
     wp_enqueue_script('jquery', 'http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js');
     wp_enqueue_script('paylink', 'https://secure.citypay.com/paylink3/js/paylink-api-1.0.0.min.js', array('jquery'));
-}
+}*/
 
 function cp_paylink_send_cors_headers($headers) {
     error_log("send_cors_headers: ".$headers);
@@ -47,58 +51,303 @@ function cp_paylink_add_query_vars_filter($vars) {
     return $vars;
 }
 
-function cp_paylink_payform_field_config_sort($v1, $v2) {
-    $v1_order = (int) $v1['order'];
-    $v2_order = (int) $v2['order'];
-    
-    if ($v1_order> $v2_order) {
+function cp_paylink_payform_field_config_sort($v1, $v2) {   
+    if ($v1->order > $v2->order) {
         return 1;
-    } else if ($v1_order < $v2_order) {
+    } else if ($v1->order < $v2->order) {
         return -1;
     } else return 0;
+}
+        
+class cp_paylink_field {
+    public $label, $name, $order, $placeholder;
+    public $value, $error;
+    public function __construct($name, $label, $placeholder = '', $order = 99) {
+        $this->name = $name;
+        $this->label = $label;
+        $this->placeholder = $placeholder;
+        $this->order = $order;
+    }
+}
+
+class cp_paylink_amount_field extends cp_paylink_field {
+    public function __construct($name, $label, $placeholder = '', $order = 99) {
+        parent::__construct($name, $label, $placeholder, $order);
+    }
+    
+    public function parse($value_in, &$value_out, $decimal_places = 2) { 
+        $this->value=$value_in;
+        $value_out = 0;
+        $i = 0; $i_max = strlen($value_in);
+        while ($i < $i_max) {
+            $c = ord($value_in[$i]);
+            if ($c >= 48 && $c <= 57) {
+                $value_out = ($value_out * 10) + ($c - 48);
+                $i++;
+            } else if ($c == ord('.')) {
+                break;
+            } else {
+                $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR;
+                return false;
+            }
+        }
+        
+        $value_out *= 100;
+        
+        if ($i >= $i_max) {
+            return true;
+        }
+        
+        if ($c == ord('.')) {
+            
+            
+            $i++;
+            $pence = 0;     
+            if ($i_max > $i + $decimal_places) {
+                $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR;
+                return false;
+            }
+            
+            $j = $decimal_places;
+            while ($i < $i_max) {
+                $c = ord($value_in[$i]);
+                if ($c >= 48 && $c <= 57) {
+                    $pence = ($pence * 10) + ($c - 48);
+                    $i++; $j--;
+                } else {
+                    $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR;
+                    return false;
+                }
+            }
+
+            if ($j > 0x00) { $pence = $pence * pow(10, $j); }
+            
+            $value_out += $pence;
+        }
+        
+        return true;
+    }
+}
+
+class cp_paylink_text_field extends cp_paylink_field {
+    public $pattern;
+   
+    public function __construct($name, $label, $placeholder = '', $pattern = '', $order = 99) {
+        parent::__construct($name, $label, $placeholder, $order);
+        $this->pattern = $pattern;
+    }
+    
+    public function parse($value_in, &$value_out) {
+        // check $value
+        $value_out = $value_in;
+        return true;
+    }
 }
 
 function cp_paylink_payform_field($attrs) {
     $a = shortcode_atts(
             array(
-                    'name' => '',
                     'label' => '',
+                    'name' => '',
+                    'order' => 99,
                     'placeholder' => '',
                     'pattern' => '',
-                    'order' => 99
+                    'type' => 'text'
                 ),
             $attrs
         );
         
-    cp_paylink_config_stack()->set(
-            $a['name'],
-            array(
-                    'label' => $a['label'],
-                    'placeholder' => $a['placeholder'],
-                    'pattern' => $a['pattern'],
-                    'order' => $a['order']
-                )
-        );
+    switch ($a['type'])
+    {
+    case 'amount':
+        $field = new cp_paylink_amount_field($a['name'], $a['label'], $a['placeholder'], $a['order']);
+        break;
+        
+    case 'text':
+    default:
+        $field = new cp_paylink_text_field($a['name'], $a['label'], $a['placeholder'], $a['pattern'], $a['order']);
+        break;
+    }
+   
+    cp_paylink_config_stack()->set($field->name, $field);
     
     return '';
 }
 
 function cp_paylink_shortcode_sink($attrs, $content = null) {
     if (!is_null($content)) {
-        cp_paylink_config_stack()->push_new();
+        //cp_paylink_config_stack()->push_new();
         do_shortcode($content);
     }
     return '';
 }
 
-function cp_paylink_trim_p_and_br_tags($s) {
+class cp_paylink_tag {
+    public $tag;
+    public $attrs;
+    public $start;
+    public $end;
+    public $tag_type;
+    public $is_matched;
+
+    public function __construct($tag, $attrs, $start, $end, $tag_type) {
+        $this->tag = $tag;
+        $this->attrs = $attrs;
+        $this->start = $start;
+        $this->end = $end;
+        $this->tag_type = $tag_type;
+    }
+}
+
+class cp_paylink_attr {
+    public $name;
+    public $value;
+
+    public function __construct($name, $value) {
+        $this->name = $name;
+        $this->value = $value;
+    }
+}
+
+class cp_paylink_text {
+    public $text;
+
+    public function __construct($text) {
+        $this->text = $text;
+    }
+}
+
+function cp_paylink_get_tag($s, &$i, &$i_max)
+{
+    $tag = ''; $attrs = '';
+    $j = $i; $i++;
+    
+    //if ($i >= $i_max) { break; }
+    
+    $c = $s[$i];
+    if ($c != "/") {
+        $tag_type = CP_PAYLINK_OPENING_TAG;
+    } else {
+        $tag_type = CP_PAYLINK_CLOSING_TAG;
+        $i++;
+    }
+
+    while ($i < $i_max) {
+        $c = $s[$i++];
+        if ($c == ">") {
+            break;
+        } else if ($c == " " || $c == "/r" || $c == "/n" || $c == "/t") { 
+            break;
+        } else {
+            $tag .= $c;
+            $i++;
+        }
+    }
+
+    $attrs = array();
+    if ($c == " " || $c == "/r" || $c == "/n" || $c == "/t")
+    {
+        while ($i < $i_max)
+        {
+            // purge whitespace
+            while (++$i < $i_max) {
+                $c = $s[$i];
+                if ($c != " " && $c != "/r" && $c != "/n" && $c != "/t") {
+                    break;
+                }
+            }
+
+            if ($c == "/") {
+                if ($tag_type == CP_PAYLINK_OPENING_TAG) {
+                    $tag_type = CP_PAYLINK_SELF_CLOSING_TAG;
+                }
+                break;
+            }
+
+            $attr_name = '';
+            $attr_value = null;
+            while ($i < $i_max) {
+                $c = $s[$i];
+                if ($c == "=" || $c == " " || $c == "/r" || $c == "/n" || $c == "/t") {
+                    break;
+                } else {
+                    $attr_name .= $c;
+                    $i++;
+                }
+            }
+
+            if ($c == "=") { 
+                $i++;
+                $attr_value = '';
+                while ($i < $i_max) {
+                    $c = $s[$i];
+                    if ($c == " " || $c == "/r" || $c == "/n" || $c == "/t") {
+                        break;
+                    } else {
+                        $attr_value .= $c;
+                        $i++;
+                    }
+                }
+            }
+
+            $attrs[] = new attr($attr_name, $attr_value);
+        }
+    }
+
+    if ($c == ">")
+    {
+        switch ($tag_type)
+        {
+        case CP_PAYLINK_OPENING_TAG:
+            //$stack[] = new tag($tag, $)
+            break;
+
+        case CP_PAYLINK_SELF_CLOSING_TAG:
+        case CP_PAYLINK_CLOSING_TAG:
+
+            break;
+        }
+    }
+
+    $tag = strtolower($tag);
+    $tag_obj = tag($tag, $attrs, $j, $i, $tag_type);
+}
+
+function cp_paylink_trim_outer_p_and_br_tags($s) {
+
+    $stack = array();
+    $content = array();
     
     $i = 0;
     $i_max = strlen($s);
     while ($i < $i_max) {
-        $c = $s[$i++];
+        // purge whitespace
+        while ($i < $i_max) {
+            $c = $s[$i++];
+            if ($c != " " && $c != "\n" && $c != "\r" && $c != "\t") { break; }
+        }
+        
+        if ($i >= $i_max) { break; }
+        
         if ($c == "<") {
-            $k = $i - 1;
+               $stack[] = &$tag_obj;
+         $content[] = &$tag_obj;
+        } else {
+            /*while ($i < $i_max) {
+                if 
+            }*/
+        }
+    }
+}
+
+
+function cp_paylink_trim_p_and_br_tags($s) {
+    $i = 0;
+    $i_max = strlen($s);
+    while ($i < $i_max) {
+        $c = $s[$i];
+        if ($c == "<") {
+            $k = $i++;
             $tag = '';
             while ($i < $i_max) {
                 $c = $s[$i++];
@@ -109,22 +358,21 @@ function cp_paylink_trim_p_and_br_tags($s) {
                 }
             }
             $tag = strtolower($tag);
-            if ($tag != "p" && $tag != "/p" && $tag != "p /" && $tag != "br"
-                && $tag != "br/" && $tag != "br /") {
+            if ($tag != "br" && $tag != "br/" && $tag != "br /") {
                 $i = $k;
                 break;
             }
         } else if ($c == " " || $c == "\n" || $c == "\r" || $c == "\t") {
             // do nothing
+            $i++;
         } else {
-            $i--;
             break;
         }
     }
     
     $j = $i_max - 1;
     while ($j > $i) {
-        $c = $s[$j--];
+        $c = $s[$j];
         if ($c == ">") {
             $k = $j + 1;
             $tag = "";
@@ -138,15 +386,14 @@ function cp_paylink_trim_p_and_br_tags($s) {
             }
             $tag = strtolower($tag);
             $tag = strrev($tag);
-            if ($tag != "p" && $tag != "/p" && $tag != "p /" && $tag != "br"
-                && $tag != "br/" && $tag != "br /") {
+            if ( $tag != "br" && $tag != "br/" && $tag != "br /") {
                 $j = $k;
                 break;
             }
         } else if ($c == " " || $c == "\n" || $c == "\r" || $c == "\t") {
             // do nothing
+            $j--;
         } else {
-            $i++;
             break;
         }
     }
@@ -156,23 +403,28 @@ function cp_paylink_trim_p_and_br_tags($s) {
     var_dump($i_max);
     var_dump($i);
     var_dump($j);
-    var_dump(bin2hex(substr($s, $i, ($j - $i) + 1)));
+    var_dump(bin2hex(substr($s, $i, ($j - $i))));
     var_dump(bin2hex(substr($s, 0, $j + 1)));
     echo '</pre>';*/
     
-    return substr($s, $i, ($j - $i) + 1);
+    return substr($s, $i, ($j - $i));
 }
 
 function cp_paylink_shortcode_passthrough($attrs, $content = null) {
     if (!is_null($content)) {
-        $s = do_shortcode($content);
-        return cp_paylink_trim_p_and_br_tags($s);
+        $s = cp_paylink_trim_p_and_br_tags($content);
+        return do_shortcode($s);
     } else {
         return '';
     }
 }
 
 function cp_paylink_payform_display($attrs, $content = null) {
+    $a = shortcode_atts(
+            array('submit' => __('Pay', cp_paylink_pay)),
+            $attrs
+        );
+    
     if (is_single() || is_page())
     {
         // if a configuration has been specified
@@ -187,22 +439,27 @@ function cp_paylink_payform_display($attrs, $content = null) {
         
         usort($config, cp_paylink_payform_field_config_sort);
         
-        foreach ($config as $key => $value) {
+        foreach ($config as $field) {
             $s .= '<div class="form-group">'
                 .'<label class="com-sm-2 control-label">'
-                .$value['label']
-                .'</label><div class="col-sm-10"><input class="form-control" name="" type="text">'
-                .'</div></div>';
+                .$field->label
+                .'</label><div class="col-sm-10"><input class="form-control" name="'
+                .$field->name
+                .'" type="text" value="'
+                .$field->value
+                .'" placeholder="'
+                .$field->placeholder
+                .'"></div></div>';
         }
         
-        $s .= '<button type="submit">Pay</button></form>';
+        $s .= '<button type="submit">'
+           .$a['submit']
+           . '</button></form>';
+        
+        return $s;
+    } else {
+        return '';
     }
-    else
-    {
-        $s = '';
-    }
-    
-    return $s;
 }
 
 function cp_paylink_payform_on_page_load($attrs, $content = null) {
@@ -216,59 +473,90 @@ function cp_paylink_payform_on_page_load($attrs, $content = null) {
     //  processing the immediate form.
     //
     if (!is_null($content)) {
-        //cp_paylink_config_stack()->push_new();
-        $content = do_shortcode($content);
-        $content = cp_paylink_trim_p_and_br_tags($content);
+        $s = cp_paylink_trim_p_and_br_tags($content);
+        return do_shortcode($s);
+    } else {
+        return '';
     }
-        
-    if (!is_null($content))
-    {
-        //cp_paylink_config_stack()->pop();
-    }
-    
-    return $content;
-}
-
-function cp_paylink_validate_identifier($pattern, $value) {
-    return 'tia-maria-'.$value;
-}
-
-function cp_paylink_validate_amount($value) {
-    return 2300;
 }
 
 function cp_paylink_action_pay() {
     require_once('includes/logger.php');
     require_once('includes/paylink.php');
 
+    $page_id = get_query_var('page_id');
+    $page_post = get_post($page_id);
+
+    add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
+    add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform', 'cp_paylink_shortcode_sink');
+
+    do_shortcode($page_post->post_content);
+    
     $merchant_id = get_option(CP_PAYLINK_MERCHANT_ID);
     $licence_key = get_option(CP_PAYLINK_LICENCE_KEY);
     $test_mode = get_option(CP_PAYLINK_TEST_MODE);
+    $identifier_out = '';
+    $email_out = '';
+    $name_out = '';
+    $amount_out = 0;
 
-    $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_REQUIRE_SCALAR);
-    $identifier = cp_paylink_validate_identifier('', $identifier_in);
-
-    $amount_in = filter_input(INPUT_POST, 'amount', FILTER_REQUIRE_SCALAR);
-    $amount = cp_paylink_validate_amount($amount_in);
-
-    $current_url = get_home_url();
-    if (is_single()) {
-        $current_url = add_query_arg('p', get_query_var('p'), $current_url);
-    } else if (is_page()) {
-        $current_url = add_query_arg('page_id', get_query_var('page_id'), $current_url);
+    $f_valid = true;
+    
+    $f = cp_paylink_config_stack()->get('identifier');
+    $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
+    if (!is_null($f) && !is_null($identifier_in)) {
+        $f_valid &= $f->parse($identifier_in, $identifier_out);
     }
+    
+    $f = cp_paylink_config_stack()->get('email');
+    $email_in = filter_input(INPUT_POST, 'email', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
+    if (!is_null($f) && !is_null($email_in)) {
+        $f_valid &= $f->parse($email_in, $email_out);
+    }
+    
+    $f = cp_paylink_config_stack()->get('name');
+    $name_in = filter_input(INPUT_POST, 'name', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
+    if (!is_null($f) && !is_null($name_in)) {
+        $f_valid &= $f->parse($name_in, $name_out);
+    }
+ 
+    $f = cp_paylink_config_stack()->get('amount');
+    $amount_in = filter_input(INPUT_POST, 'amount', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
+    if (!is_null($f) && !is_null($amount_in)) {
+        $f_valid &= $f->parse($amount_in, $amount_out);
+    }
+    
+        /*echo '<pre>';
+        echo 'identifier_in = "'.$identifier_in.'"; ';
+        echo 'identifier_out = "'.$identifier_out.'"; ';
+        echo 'email_out = "'.$email_out.'"; ';
+        echo 'name_in = "'.$name_in.'"; ';
+        echo 'name_out = "'.$name_out.'"; ';
+        echo 'amount_out = "'.$amount_out.'";';
+        echo '</pre>';
+        exit;*/
+    
+    if (!$f_valid) { return; }
+   
+    $current_url = get_home_url();
+    $current_url = add_query_arg('page_id', $page_id, $current_url);
     
     $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
     $success_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'success', $current_url);
     $failure_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', $current_url);
-
+    
     $x = new CityPay_PayLink(new logger());
     $x->setRequestCart(
             $merchant_id,
             $licence_key,
-            $identifier,
-            $amount
+            $identifier_out,
+            $amount_out
         );
+    $x->setRequestAddress($name_out, '', '', '', '', '', '', '', $email_out);
     $x->setRequestClient('Wordpress', get_bloginfo('version', 'raw'));
     $x->setRequestConfig(
             $test_mode,
@@ -285,41 +573,11 @@ function cp_paylink_action_pay() {
     }
 }
 
-function cp_paylink_init() {
+function cp_paylink_init() {    
     if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
-        $action = $_GET[CP_PAYLINK_DISPATCHER];
-        switch ($action)
-        {
-        case 'pay':
-        case 'postback':
-        case 'success':
-        case 'failure':
-            add_filter('query_vars', 'cp_paylink_add_query_vars_filter');
-            add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
-            add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
-            switch ($action)
-            {
-                case 'success':
-                    add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_passthrough');
-                    add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
-                    add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
-                    break;
-                
-                case 'failure':
-                    add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
-                    add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_passthrough');
-                    add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
-                    break;
-            }
-
-            add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
-            add_action('template_redirect', 'cp_paylink_template_redirect_dispatcher');
-            break;
-
-        default:
-
-            break;
-        }
+        $action = $_GET[CP_PAYLINK_DISPATCHER];       
+        add_filter('query_vars', 'cp_paylink_add_query_vars_filter');
+        add_action('template_redirect', 'cp_paylink_template_redirect_dispatcher');
     } else {
         add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
         add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
@@ -328,8 +586,6 @@ function cp_paylink_init() {
         add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
-        add_action('wp_enqueue_scripts', 'cp_paylink_enqueue_styles');
-        add_action('wp_enqueue_scripts', 'cp_paylink_enqueue_javascript');
         add_action('admin_menu', 'cp_paylink_administration');
         //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
         add_filter('plugin_action_links_'.plugin_basename(__FILE__), 'cp_paylink_settings_link');
@@ -338,6 +594,43 @@ function cp_paylink_init() {
 
 function cp_paylink_wp_loaded() {
     return;
+}
+
+function cp_paylink_template_redirect_on_redirect_failure()
+{
+    $page_id = get_query_var('page_id');
+    $page_post = get_post($page_id);
+
+    add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
+    add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_passthrough');
+    add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
+    
+    do_shortcode($page_post->post_content);
+}
+
+function cp_paylink_template_redirect_on_postback()
+{
+    ob_clean();
+    header('HTTP/1.1 200 OK');
+    exit;
+}
+
+function cp_paylink_template_redirect_on_redirect_success()
+{
+    $page_id = get_query_var('page_id');
+    $page_post = get_post($page_id);
+
+    add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
+    add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_passthrough');
+    add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
+
+    do_shortcode($page_post->post_content);
 }
 
 function cp_paylink_template_redirect_dispatcher() {
@@ -350,16 +643,15 @@ function cp_paylink_template_redirect_dispatcher() {
             break;
 
         case 'postback':
+            cp_paylink_template_redirect_on_postback();
             break;
 
         case 'success':
+            cp_paylink_template_redirect_on_redirect_success();
             break;
 
         case 'failure':
-            $page_id = get_query_var('page_id');
-            $page_post = get_post($page_id);
-            do_shortcode($page_post->post_content);
-            //var_dump(cp_paylink_config_stack());
+            cp_paylink_template_redirect_on_redirect_failure();
             break;
 
         default:
