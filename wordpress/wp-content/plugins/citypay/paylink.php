@@ -19,8 +19,18 @@ define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
 define(CP_PAYLINK_EMAIL_REGEX, '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)$/');
 
 define(CP_PAYLINK_NO_ERROR, 0x00);
+
+define(CP_PAYLINK_AMOUNT_PARSE_ERROR, -1);
+define(CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING, -2);
+define(CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER, -3);
+define(CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION, -4);
+define(CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE, -5);
+define(CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE, -6);
+
+define(CP_PAYLINK_DEFAULT_MINIMUM_AMOUNT, 0);
+
 define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR, 0x01);
-define(CP_PAYLINK_AMOUNT_FIELD_PARSE_ERROR, 0x02);
+
 define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR, 0x03);
 
 require_once('includes/stack.php');
@@ -78,69 +88,138 @@ class cp_paylink_field {
 }
 
 class cp_paylink_amount_field extends cp_paylink_field {
-    public function __construct($name, $label, $placeholder = '', $order = 99) {
-        parent::__construct($name, $label, $placeholder, $order);
-    }
+    private $decimal_places, $minimum, $maximum;
     
-    public function parse($value_in, &$value_out, $decimal_places = 2) {
-        parent::parse($value_in);
-        $value_in = $this->value;
-        $value_out = 0;
-        $i = 0; $i_max = strlen($value_in);
+    private function _parse_amount($in, &$out, $decimal_places = null)
+    {
+        $_in = trim($in);
+        $_out = 0;
+        $i = 0; $i_max = strlen($_in);
+        
+        if ($i_max <= 0x00) {
+            return CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING;
+        }
+        
         while ($i < $i_max) {
-            $c = ord($value_in[$i]);
+            $c = ord($_in[$i]);
             if ($c >= 48 && $c <= 57) {
-                $value_out = ($value_out * 10) + ($c - 48);
+                $_out = ($_out * 10) + ($c - 48);
                 $i++;
             } else if ($c == ord('.')) {
                 break;
             } else {
-                $this->error = CP_PAYLINK_AMOUNT_FIELD_PARSE_ERROR;
-                return false;
+                return CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER;
             }
         }
         
-        $value_out *= 100;
+        $_out *= 100;
         
         if ($i >= $i_max) {
-            return true;
+            $out = $_out;
+            return CP_PAYLINK_NO_ERROR;
         }
         
         if ($c == ord('.')) {
             $i++;
-            $pence = 0;     
-            if ($i_max > $i + $decimal_places) {
-                $this->error = CP_PAYLINK_AMOUNT_FIELD_PARSE_ERROR;
-                return false;
+            $pence = 0;
+            
+            if (!is_null($decimal_places) && $i_max > $i + $decimal_places) {
+                return CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION;
             }
             
             $j = $decimal_places;
             while ($i < $i_max) {
-                $c = ord($value_in[$i]);
+                $c = ord($_in[$i]);
                 if ($c >= 48 && $c <= 57) {
                     $pence = ($pence * 10) + ($c - 48);
                     $i++; $j--;
                 } else {
-                    $this->error = CP_PAYLINK_AMOUNT_FIELD_PARSE_ERROR;
-                    return false;
+                    return CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER;
                 }
             }
 
             if ($j > 0x00) { $pence = $pence * pow(10, $j); }
             
-            $value_out += $pence;
+            $_out += $pence;
         }
         
-        return true;
+        $out = $_out;
+        return CP_PAYLINK_NO_ERROR;
+    }
+    
+    public function __construct($name, $label, $placeholder = '', $order = 99, $decimal_places = null, $minimum = null, $maximum = null) {
+        $r = parent::__construct($name, $label, $placeholder, $order);
+        if ($r) {
+            if (is_null($decimal_places)) {
+                $this->decimal_places = null;
+            } else {
+                $this->decimal_places = intval($decimal_places);
+            }
+            
+            if (is_null($minimum)) {
+                $this->minimum = null;
+            } else {
+                $r = self::_parse_amount($minimum, $this->minimum);
+                if (!$r) {
+                    // TODO: raise exception
+                }
+            }
+            
+            if (is_null($maximum)) {
+                $this->maximum = null;
+            } else {
+                $r = self::_parse_amount($maximum, $this->maximum);
+                if (!$r) {
+                    // TODO: raise exception
+                }
+            }
+        } else {
+            // TODO: raise exception
+        }
+    }
+     
+    public function parse($value_in, &$value_out, $decimal_places = null) {
+        $value = 0;
+        $r = parent::parse($value_in, $value);
+        if (!$r) {
+            // this should relate to an upstream error - TODO: restructure
+            // parse functionality to return more finely grained errors
+            // at all levels.
+            $this->error = CP_PAYLINK_NO_ERROR;
+            return false;
+        }
+        
+        $_decimal_places = (!is_null($decimal_places)?$decimal_places:$this->decimal_places);
+        $r2 = self::_parse_amount($value, $value_out, $_decimal_places);
+        if ($r2 == CP_PAYLINK_NO_ERROR) {
+            if (!is_null($this->minimum) && $value_out < $this->minimum) {
+                $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE;
+                return false;
+            } else if (!is_null($this->maximum) && $value_out > $this->maximum) {
+                $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE;
+                return false;
+            } else {
+                $this->error = CP_PAYLINK_NO_ERROR;
+                return true;
+            }
+        } else {
+            $this->error = $r2;
+            return false;
+        }
     }
 }
 
 class cp_paylink_email_field extends cp_paylink_field {
     public function parse($value_in, &$value_out) {
-        parent::parse($value_in, $value_out);
-        $r = preg_match(CP_PAYLINK_EMAIL_REGEX, $this->value);
-        if ($r) { $value_out = $this->value; }
-        else { $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR; }
+        $r = parent::parse($value_in, $value_out);
+        if ($r) {
+            $r = preg_match(CP_PAYLINK_EMAIL_REGEX, $this->value);
+            if ($r) {
+                $value_out = $this->value;
+            } else {
+                $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR;
+            }
+        }
         return $r;
     }
 }
@@ -154,7 +233,7 @@ class cp_paylink_text_field extends cp_paylink_field {
     }
     
     public function parse($value_in, &$value_out) {
-        parent::parse($value_in, $value_out);
+        return parent::parse($value_in, $value_out);
     }
 }
 
@@ -484,6 +563,26 @@ function cp_paylink_payform_display($attrs, $content = null) {
                 case CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR:
                     $s .= '<em>Email address field parse </em>';
                     break;
+                    
+                case CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING:
+                    $s .= '<em>Amount field parse error: empty string</em>';
+                    break;
+                
+                case CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER:
+                    $s .= '<em>Amount field parse error: invalid character</em>';
+                    break;
+                
+                case CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION:
+                    $s .= '<em>Amount field parse error: invalid precision</em>';
+                    break;
+                
+                case CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE:
+                    $s .= '<em>Amount field parse error: below minimum value</em>';
+                    break;
+                
+                case CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE:
+                    $s .= '<em>Amount field parse error: above maximum value</em>';
+                    break;
                 }
             }
             
@@ -539,40 +638,55 @@ function cp_paylink_action_pay() {
 
     $f_valid = true;
     
+    //echo '<pre>';
+    //var_dump($f_valid);
     $f1 = cp_paylink_config_stack()->get('identifier');
     $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f1) && !is_null($identifier_in)) {
         $f_valid &= $f1->parse($identifier_in, $identifier_out);
+    //    var_dump($f_valid);
     }
     
     $f2 = cp_paylink_config_stack()->get('email');
     $email_in = filter_input(INPUT_POST, 'email', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f2) && !is_null($email_in)) {
         $f_valid &= $f2->parse($email_in, $email_out);
+    //    var_dump($f_valid);
     }
     
-    $f3 = cp_paylink_config_stack()->get('name');
-    $name_in = filter_input(INPUT_POST, 'name', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
+    // Note: Name field had to be renamed to customer-name, as name field is
+    // a Wordpress field that (presumably) relates to the name of either a link
+    // or a particular blog post (using the slug). Consequently, on entering
+    // text into the 'name' page, Wordpress was attempting to resolve the
+    // name in preference to the page identifier with the result that a page
+    // not found error / template page was being generated and output.
+    //
+    // May require an element of white / black listing on field names to avoid
+    // this situation, particularly if caused by users.
+    $f3 = cp_paylink_config_stack()->get('customer-name');
+    $name_in = filter_input(INPUT_POST, 'customer-name', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f3) && !is_null($name_in)) {
         $f_valid &= $f3->parse($name_in, $name_out);
+    //    var_dump($f_valid);
     }
  
     $f4 = cp_paylink_config_stack()->get('amount');
     $amount_in = filter_input(INPUT_POST, 'amount', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f4) && !is_null($amount_in)) {
         $f_valid &= $f4->parse($amount_in, $amount_out);
+    //    var_dump($f_valid);
     }
-    
-        /*echo '<pre>';
-        echo 'identifier_in = "'.$identifier_in.'"; ';
+       
+        /*echo 'identifier_in = "'.$identifier_in.'"; ';
         echo 'identifier_out = "'.$identifier_out.'"; ';
         echo 'email_in = "'.$email_in.'"; ';
         echo 'email_out = "'.$email_out.'"; ';
         echo 'name_in = "'.$name_in.'"; ';
         echo 'name_out = "'.$name_out.'"; ';
         echo 'amount_out = "'.$amount_out.'";';
+        var_dump($f_valid);
         echo '</pre>';
-        exit;*/
+        //exit;*/
     
     if (!$f_valid) { return false; }
    
@@ -668,32 +782,43 @@ function cp_paylink_template_redirect_on_redirect_success()
 
 function cp_paylink_template_redirect_dispatcher() {
     
-    echo '<pre>'.$_GET[CP_PAYLINK_DISPATCHER].'</pre>';
+    //echo '<pre>'.$_GET[CP_PAYLINK_DISPATCHER].'</pre>';
     
     if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
         $action = $_GET[CP_PAYLINK_DISPATCHER];
         switch ($action)
         {
         case 'pay':
-            cp_paylink_action_pay();
-            echo '<pre>Display the page with errors</pre>';
-            remove_shortcode('citypay-payform');
-            remove_shortcode('citypay-payform-on-redirect-success');
-            remove_shortcode('citypay-payform-on-redirect-failure');
-            remove_shortcode('citypay-payform-on-redirect-cancel');
-            remove_shortcode('citypay-payform-on-page-load');
-            remove_shortcode('citypay-payform-display');
-            remove_shortcode('citypay-payform-field');
-            add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
-            add_shortcode('citypay-payform-field', 'cp_paylink_shortcode_sink');
-            add_shortcode('citypay-payform-on-page-load', 'cp_paylink_payform_on_page_load');
-            add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
-            add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
-            add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
-            add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
-            add_action('admin_menu', 'cp_paylink_administration');
-            //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
-            add_filter('plugin_action_links_'.plugin_basename(__FILE__), 'cp_paylink_settings_link');
+            $r = cp_paylink_action_pay();
+            if (!$r) {
+                //echo '<pre>Display the page with errors</pre>';
+                
+                //$page_id = get_query_var('page_id');
+                //$page_post = get_post($page_id);
+                //echo '<pre>';
+                //var_dump(the_ID());
+                //var_dump(get_current_blog_id());
+                //var_dump($GLOBALS['wp']);
+                //echo '</pre>';
+                
+                remove_shortcode('citypay-payform');
+                remove_shortcode('citypay-payform-on-redirect-success');
+                remove_shortcode('citypay-payform-on-redirect-failure');
+                remove_shortcode('citypay-payform-on-redirect-cancel');
+                remove_shortcode('citypay-payform-on-page-load');
+                remove_shortcode('citypay-payform-display');
+                remove_shortcode('citypay-payform-field');
+                add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
+                add_shortcode('citypay-payform-field', 'cp_paylink_shortcode_sink');
+                add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_passthrough');
+                add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
+                add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
+                add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
+                add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
+                add_action('admin_menu', 'cp_paylink_administration');
+                //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
+                add_filter('plugin_action_links_'.plugin_basename(__FILE__), 'cp_paylink_settings_link');
+            }
             break;
 
         case 'postback':
