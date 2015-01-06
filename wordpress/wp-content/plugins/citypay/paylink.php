@@ -284,6 +284,7 @@ class cp_paylink_text_field extends cp_paylink_field {
                 $this->error = CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING;
             }
         }
+        return true;
     }
 }
 
@@ -699,15 +700,11 @@ function cp_paylink_action_pay() {
     
     $f1 = cp_paylink_config_stack()->get('identifier');
     $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    if (!is_null($f1) && !is_null($identifier_in)) {
-        $f_valid &= $f1->parse($identifier_in, $identifier_out);
-    }
+    $f1_valid = (!is_null($f1) && !is_null($identifier_in)) && $f1->parse($identifier_in, $identifier_out);
     
     $f2 = cp_paylink_config_stack()->get('email');
     $email_in = filter_input(INPUT_POST, 'email', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    if (!is_null($f2) && !is_null($email_in)) {
-        $f_valid &= $f2->parse($email_in, $email_out);
-    }
+    $f2_valid = (!is_null($f2) && !is_null($email_in)) && $f2->parse($email_in, $email_out);
     
     // Note: Name field had to be renamed to customer-name, as name field is
     // a Wordpress field that (presumably) relates to the name of either a link
@@ -720,15 +717,11 @@ function cp_paylink_action_pay() {
     // this situation, particularly if caused by users.
     $f3 = cp_paylink_config_stack()->get('customer-name');
     $name_in = filter_input(INPUT_POST, 'customer-name', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    if (!is_null($f3) && !is_null($name_in)) {
-        $f_valid &= $f3->parse($name_in, $name_out);
-    }
+    $f3_valid = (!is_null($f3) && !is_null($name_in)) && $f3->parse($name_in, $name_out);
  
     $f4 = cp_paylink_config_stack()->get('amount');
     $amount_in = filter_input(INPUT_POST, 'amount', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    if (!is_null($f4) && !is_null($amount_in)) {
-        $f_valid &= $f4->parse($amount_in, $amount_out);
-    }
+    $f4_valid = (!is_null($f4) && !is_null($amount_in)) && $f4->parse($amount_in, $amount_out);
        
         /*echo '<pre>';
         echo 'identifier_in = "'.$identifier_in.'"; ';
@@ -739,12 +732,15 @@ function cp_paylink_action_pay() {
         echo 'name_out = "'.$name_out.'"; ';
         echo 'amount_in = "'.$amount_in.'";';
         echo 'amount_out = "'.$amount_out.'";';
-        var_dump($f_valid);
+        var_dump($f1_valid);
+        var_dump($f2_valid);
+        var_dump($f3_valid);
+        var_dump($f4_valid);
         var_dump($f4);
         echo '</pre>';
         //exit;*/
     
-    if (!$f_valid) { return false; }
+    if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid) { return false; }
    
     $current_url = add_query_arg('page_id', $page_id, get_home_url());
     $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
