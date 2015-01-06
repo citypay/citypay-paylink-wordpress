@@ -254,11 +254,15 @@ class cp_paylink_email_field extends cp_paylink_field {
     public function parse($value_in, &$value_out) {
         $r = parent::parse($value_in, $value_out);
         if ($r) {
-            $r = preg_match(CP_PAYLINK_EMAIL_REGEX, $this->value);
-            if ($r) {
-                $value_out = $this->value;
+            if (strlen($value_out) == 0x00) {
+                $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING;
             } else {
-                $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR;
+                $r = preg_match(CP_PAYLINK_EMAIL_REGEX, $this->value);
+                if ($r) {
+                    $value_out = $this->value;
+                } else {
+                    $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID;
+                }
             }
         }
         return $r;
@@ -274,7 +278,12 @@ class cp_paylink_text_field extends cp_paylink_field {
     }
     
     public function parse($value_in, &$value_out) {
-        return parent::parse($value_in, $value_out);
+        $r = parent::parse($value_in, $value_out);
+        if ($r) {
+            if (strlen($value_out) == 0x00) {
+                $this->error = CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING;
+            }
+        }
     }
 }
 
