@@ -227,5 +227,3 @@ class CityPay_PayLink {
 		return true;	// Hash values match expected value
 	}
 }
-
-?>

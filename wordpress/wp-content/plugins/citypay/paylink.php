@@ -33,7 +33,7 @@ define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR, 0x01);
 
 define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR, 0x03);
 
-require_once('includes/stack.php');
+require_once('includes/class-citypay-stack.php');
 
 function cp_paylink_config_stack() {
     static $cp_paylink_config_stack = NULL;
@@ -630,8 +630,8 @@ function cp_paylink_payform_on_page_load($attrs, $content = null) {
 }
 
 function cp_paylink_action_pay() {
-    require_once('includes/logger.php');
-    require_once('includes/paylink.php');
+    require_once('includes/class-citypay-logger.php');
+    require_once('includes/class-citypay-paylink.php');
 
     $page_id = get_query_var('page_id');
     $page_post = get_post($page_id);
