@@ -29,9 +29,23 @@ define(CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE, -6);
 
 define(CP_PAYLINK_DEFAULT_MINIMUM_AMOUNT, 0);
 
-define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR, 0x01);
+define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING, -100);
 
-define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR, 0x03);
+define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING, -200);
+define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID, -201);
+
+define(CP_PAYLINK_DEFAULT_ERROR_MESSAGE, 'cp_paylink_default_error_messages');
+
+$cp_paylink_default_error_messages = array(
+        CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING => __('Text field parse error: empty string'),             
+        CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING => __('Email address field parse error: empty string'),
+        CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID => __('Email address field parse error: not valid'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING => __('Amount field parse error: empty string'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER => __('Amount field parse error: invalid character'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION => __('Amount field parse error: invalid precision'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE => __('Amount field parse error: below minimum value'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE => __('Amount field parse error: above maximum value')
+    );
 
 require_once('includes/class-citypay-stack.php');
 
@@ -72,7 +86,7 @@ function cp_paylink_payform_field_config_sort($v1, $v2) {
         
 class cp_paylink_field {
     public $label, $name, $order, $placeholder;
-    public $value, $error;
+    public $value, $error, $error_message;
     public function __construct($name, $label, $placeholder = '', $order = 99) {
         $this->name = $name;
         $this->label = $label;
@@ -80,10 +94,42 @@ class cp_paylink_field {
         $this->order = $order;
     }
     
+    public function configure_error_message($attrs, $content = null) {
+        $a = shortcode_atts(
+                array(
+                        'handle' => ''
+                    ),
+                $attrs
+            );
+        
+        $h = constant($a['handle']);
+        if (!is_null($h)) {
+            $this->error_message[$h] = $content;
+        }
+        
+        return '';
+    }
+    
     public function parse($value_in, &$value_out) {
         $this->value = $value_in;
         $value_out = $value_in;
         return true;
+    }
+    
+    public function getErrorMessage() {
+        if ($this->error != CP_PAYLINK_NO_ERROR) {
+            if (!is_null($this->error_message)) {
+                if (array_key_exists($this->error, $this->error_message)) {
+                    return $this->error_message[$this->error];
+                } else {
+                    return $GLOBALS[CP_PAYLINK_DEFAULT_ERROR_MESSAGE][$this->error];
+                }
+            } else {
+                return $GLOBALS[CP_PAYLINK_DEFAULT_ERROR_MESSAGE][$this->error];
+            }
+        } else {
+            return '';
+        }
     }
 }
 
@@ -232,7 +278,7 @@ class cp_paylink_text_field extends cp_paylink_field {
     }
 }
 
-function cp_paylink_payform_amount_field($attrs) {
+function cp_paylink_payform_amount_field($attrs, $content = null) {
     $a = shortcode_atts(
             array(
                     'label' => '',
@@ -245,24 +291,32 @@ function cp_paylink_payform_amount_field($attrs) {
                 ),
             $attrs
         );
+    
+    $field = new cp_paylink_amount_field(
+            $a['name'],
+            $a['label'],
+            $a['placeholder'],
+            $a['order'],
+            $a['decimal-places'],
+            $a['minimum'],
+            $a['maximum']
+        );
+    
+    if (!is_null($field) && !is_null($content)) {
+        add_shortcode('error-message', array($field, 'configure_error_message'));
+        do_shortcode($content);
+        remove_shortcode('error-message');
+    }
         
     cp_paylink_config_stack()->set(
             $a['name'],
-            new cp_paylink_amount_field(
-                    $a['name'],
-                    $a['label'],
-                    $a['placeholder'],
-                    $a['order'],
-                    $a['decimal-places'],
-                    $a['minimum'],
-                    $a['maximum']
-                )
+            $field
         );
     
     return '';
 }
 
-function cp_paylink_payform_field($attrs) {
+function cp_paylink_payform_field($attrs, $content = null) {
     $a = shortcode_atts(
             array(
                     'label' => '',
@@ -285,6 +339,12 @@ function cp_paylink_payform_field($attrs) {
     default:
         $field = new cp_paylink_text_field($a['name'], $a['label'], $a['placeholder'], $a['pattern'], $a['order']);
         break;
+    }
+    
+    if (!is_null($field) && !is_null($content)) {
+        add_shortcode('error-message', array($field, 'configure_error_message'));
+        do_shortcode($content);
+        remove_shortcode('error-message');
     }
    
     cp_paylink_config_stack()->set($field->name, $field);
@@ -570,37 +630,9 @@ function cp_paylink_payform_display($attrs, $content = null) {
                 .$field->placeholder
                 .'">';
             
-            if (!is_null($field->error)) {
-                switch ($field->error)
-                {
-                case CP_PAYLINK_TEXT_FIELD_PARSE_ERROR:
-                    $s .= '<em>Text field parse error</em>';
-                    break;
-                
-                case CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR:
-                    $s .= '<em>Email address field parse </em>';
-                    break;
-                    
-                case CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING:
-                    $s .= '<em>Amount field parse error: empty string</em>';
-                    break;
-                
-                case CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER:
-                    $s .= '<em>Amount field parse error: invalid character</em>';
-                    break;
-                
-                case CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION:
-                    $s .= '<em>Amount field parse error: invalid precision</em>';
-                    break;
-                
-                case CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE:
-                    $s .= '<em>Amount field parse error: below minimum value</em>';
-                    break;
-                
-                case CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE:
-                    $s .= '<em>Amount field parse error: above maximum value</em>';
-                    break;
-                }
+            $e = $field->getErrorMessage();
+            if (!empty($e)) {
+                $s .= '<em> '.$e.'</em>';
             }
             
             $s .= '</div></div>';
