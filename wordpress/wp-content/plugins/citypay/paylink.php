@@ -80,7 +80,7 @@ class cp_paylink_field {
         $this->order = $order;
     }
     
-    protected function parse($value_in, &$value_out) {
+    public function parse($value_in, &$value_out) {
         $this->value = $value_in;
         $value_out = $value_in;
         return true;
@@ -90,7 +90,7 @@ class cp_paylink_field {
 class cp_paylink_amount_field extends cp_paylink_field {
     private $decimal_places, $minimum, $maximum;
     
-    private function _parse_amount($in, &$out, $decimal_places = null)
+    private static function _parse_amount($in, &$out, $decimal_places = null)
     {
         $_in = trim($in);
         $_out = 0;
@@ -148,50 +148,45 @@ class cp_paylink_amount_field extends cp_paylink_field {
     }
     
     public function __construct($name, $label, $placeholder = '', $order = 99, $decimal_places = null, $minimum = null, $maximum = null) {
-        $r = parent::__construct($name, $label, $placeholder, $order);
-        if ($r) {
-            if (is_null($decimal_places)) {
-                $this->decimal_places = null;
-            } else {
-                $this->decimal_places = intval($decimal_places);
-            }
-            
-            if (is_null($minimum)) {
-                $this->minimum = null;
-            } else {
-                $r = self::_parse_amount($minimum, $this->minimum);
-                if (!$r) {
-                    // TODO: raise exception
-                }
-            }
-            
-            if (is_null($maximum)) {
-                $this->maximum = null;
-            } else {
-                $r = self::_parse_amount($maximum, $this->maximum);
-                if (!$r) {
-                    // TODO: raise exception
-                }
-            }
+        parent::__construct($name, $label, $placeholder, $order);
+        if (is_null($decimal_places)) {
+            $this->decimal_places = null;
         } else {
-            // TODO: raise exception
+            $this->decimal_places = intval($decimal_places);
+        }
+
+        if (is_null($minimum)) {
+            $this->minimum = null;
+        } else {
+            $r = self::_parse_amount($minimum, $this->minimum, $decimal_places);
+            if (!$r) {;
+                // TODO: raise exception
+            }
+        }
+
+        if (is_null($maximum)) {
+            $this->maximum = null;
+        } else {
+            $r = self::_parse_amount($maximum, $this->maximum, $decimal_places);
+            if (!$r) {
+                // TODO: raise exception
+            }
         }
     }
      
     public function parse($value_in, &$value_out, $decimal_places = null) {
-        $value = 0;
-        $r = parent::parse($value_in, $value);
-        if (!$r) {
+        $_val = 0;
+        if (!parent::parse($value_in, $_val)) {
             // this should relate to an upstream error - TODO: restructure
             // parse functionality to return more finely grained errors
-            // at all levels.
+            // at all levels (rather than boolean true / false values).
             $this->error = CP_PAYLINK_NO_ERROR;
             return false;
         }
-        
+       
         $_decimal_places = (!is_null($decimal_places)?$decimal_places:$this->decimal_places);
-        $r2 = self::_parse_amount($value, $value_out, $_decimal_places);
-        if ($r2 == CP_PAYLINK_NO_ERROR) {
+        $r = self::_parse_amount($_val, $value_out, $_decimal_places);
+        if ($r == CP_PAYLINK_NO_ERROR) {
             if (!is_null($this->minimum) && $value_out < $this->minimum) {
                 $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE;
                 return false;
@@ -203,7 +198,7 @@ class cp_paylink_amount_field extends cp_paylink_field {
                 return true;
             }
         } else {
-            $this->error = $r2;
+            $this->error = $r;
             return false;
         }
     }
@@ -237,6 +232,36 @@ class cp_paylink_text_field extends cp_paylink_field {
     }
 }
 
+function cp_paylink_payform_amount_field($attrs) {
+    $a = shortcode_atts(
+            array(
+                    'label' => '',
+                    'name' => '',
+                    'order' => 99,
+                    'placeholder' => '',
+                    'decimal-places' => 2,
+                    'minimum' => null,
+                    'maximum' => null
+                ),
+            $attrs
+        );
+        
+    cp_paylink_config_stack()->set(
+            $a['name'],
+            new cp_paylink_amount_field(
+                    $a['name'],
+                    $a['label'],
+                    $a['placeholder'],
+                    $a['order'],
+                    $a['decimal-places'],
+                    $a['minimum'],
+                    $a['maximum']
+                )
+        );
+    
+    return '';
+}
+
 function cp_paylink_payform_field($attrs) {
     $a = shortcode_atts(
             array(
@@ -251,11 +276,7 @@ function cp_paylink_payform_field($attrs) {
         );
         
     switch ($a['type'])
-    {
-    case 'amount':
-        $field = new cp_paylink_amount_field($a['name'], $a['label'], $a['placeholder'], $a['order']);
-        break;
-    
+    {    
     case 'email-address':
         $field = new cp_paylink_email_field($a['name'], $a['label'], $a['placeholder'], $a['order']);
         break;
@@ -556,10 +577,6 @@ function cp_paylink_payform_display($attrs, $content = null) {
                     $s .= '<em>Text field parse error</em>';
                     break;
                 
-                case CP_PAYLINK_AMOUNT_FIELD_PARSE_ERROR:
-                    $s .= '<em>Amount field parse error</em>';
-                    break;
-                
                 case CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR:
                     $s .= '<em>Email address field parse </em>';
                     break;
@@ -619,6 +636,7 @@ function cp_paylink_action_pay() {
     $page_id = get_query_var('page_id');
     $page_post = get_post($page_id);
 
+    add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
@@ -638,20 +656,16 @@ function cp_paylink_action_pay() {
 
     $f_valid = true;
     
-    //echo '<pre>';
-    //var_dump($f_valid);
     $f1 = cp_paylink_config_stack()->get('identifier');
     $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f1) && !is_null($identifier_in)) {
         $f_valid &= $f1->parse($identifier_in, $identifier_out);
-    //    var_dump($f_valid);
     }
     
     $f2 = cp_paylink_config_stack()->get('email');
     $email_in = filter_input(INPUT_POST, 'email', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f2) && !is_null($email_in)) {
         $f_valid &= $f2->parse($email_in, $email_out);
-    //    var_dump($f_valid);
     }
     
     // Note: Name field had to be renamed to customer-name, as name field is
@@ -667,24 +681,25 @@ function cp_paylink_action_pay() {
     $name_in = filter_input(INPUT_POST, 'customer-name', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f3) && !is_null($name_in)) {
         $f_valid &= $f3->parse($name_in, $name_out);
-    //    var_dump($f_valid);
     }
  
     $f4 = cp_paylink_config_stack()->get('amount');
     $amount_in = filter_input(INPUT_POST, 'amount', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     if (!is_null($f4) && !is_null($amount_in)) {
         $f_valid &= $f4->parse($amount_in, $amount_out);
-    //    var_dump($f_valid);
     }
        
-        /*echo 'identifier_in = "'.$identifier_in.'"; ';
+        /*echo '<pre>';
+        echo 'identifier_in = "'.$identifier_in.'"; ';
         echo 'identifier_out = "'.$identifier_out.'"; ';
         echo 'email_in = "'.$email_in.'"; ';
         echo 'email_out = "'.$email_out.'"; ';
         echo 'name_in = "'.$name_in.'"; ';
         echo 'name_out = "'.$name_out.'"; ';
+        echo 'amount_in = "'.$amount_in.'";';
         echo 'amount_out = "'.$amount_out.'";';
         var_dump($f_valid);
+        var_dump($f4);
         echo '</pre>';
         //exit;*/
     
@@ -727,6 +742,7 @@ function cp_paylink_init() {
         add_action('template_redirect', 'cp_paylink_template_redirect_dispatcher');
     } else {
         add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
+        add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
         add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
         add_shortcode('citypay-payform-on-page-load', 'cp_paylink_payform_on_page_load');
         add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
@@ -748,6 +764,7 @@ function cp_paylink_template_redirect_on_redirect_failure()
     $page_id = get_query_var('page_id');
     $page_post = get_post($page_id);
 
+    add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
@@ -770,6 +787,7 @@ function cp_paylink_template_redirect_on_redirect_success()
     $page_id = get_query_var('page_id');
     $page_post = get_post($page_id);
 
+    add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_passthrough');
@@ -808,7 +826,9 @@ function cp_paylink_template_redirect_dispatcher() {
                 remove_shortcode('citypay-payform-on-page-load');
                 remove_shortcode('citypay-payform-display');
                 remove_shortcode('citypay-payform-field');
+                remove_shortcode('citypay-payform-amount-field');
                 add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
+                add_shortcode('citypay-payform-amount-field', 'cp_paylink_shortcode_sink');
                 add_shortcode('citypay-payform-field', 'cp_paylink_shortcode_sink');
                 add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_passthrough');
                 add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');

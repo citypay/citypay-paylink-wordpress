@@ -30,11 +30,11 @@ class cp_paylink_config_stack
         return array_push($this->stack);
     }
     
-    public function set($name, $value) {
+    public function set($name, &$value) {
         $this->stack[$this->ptr][$name] = $value;
     }
     
-    public function get($name) {
+    public function &get($name) {
         return $this->stack[$this->ptr][$name];
     }
 }
