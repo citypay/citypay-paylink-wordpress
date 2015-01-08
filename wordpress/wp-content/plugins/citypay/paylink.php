@@ -17,6 +17,7 @@ define(CP_PAYLINK_TEST_MODE, 'cp_paylink_test_mode');
 define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
     
 define(CP_PAYLINK_EMAIL_REGEX, '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)$/');
+define(CP_PAYLINK_IDENTIFIER_REGEX, '/[A-Za-z0-9]{5,}/');
 
 define(CP_PAYLINK_NO_ERROR, 0x00);
 
@@ -34,10 +35,15 @@ define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING, -100);
 define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING, -200);
 define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID, -201);
 
+define(CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING, -300);
+define(CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID, -301);
+
 define(CP_PAYLINK_DEFAULT_ERROR_MESSAGE, 'cp_paylink_default_error_messages');
 
 $cp_paylink_default_error_messages = array(
-        CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING => __('Text field parse error: empty string'),             
+        CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING => __('Text field parse error: empty string'),   
+        CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING => __('Identifier field parse error: empty string'),
+        CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID => __('Identifier field parse error: not valid'),
         CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING => __('Email address field parse error: empty string'),
         CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID => __('Email address field parse error: not valid'),
         CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING => __('Amount field parse error: empty string'),
@@ -269,6 +275,25 @@ class cp_paylink_email_field extends cp_paylink_field {
     }
 }
 
+class cp_paylink_identifier_field extends cp_paylink_field {
+    public function parse($value_in, &$value_out) {
+        $r = parent::parse($value_in, $value_out);
+        if ($r) {
+            if (strlen($value_out) == 0x00) {
+                $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING;
+            } else {
+                $r = preg_match(CP_PAYLINK_IDENTIFIER_REGEX, $this->value);
+                if ($r) {
+                    $value_out = $this->value;
+                } else {
+                    $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID;
+                }
+            }
+        }
+        return $r;
+    }
+}
+
 class cp_paylink_text_field extends cp_paylink_field {
     public $pattern;
    
@@ -344,7 +369,11 @@ function cp_paylink_payform_field($attrs, $content = null) {
     case 'email-address':
         $field = new cp_paylink_email_field($a['name'], $a['label'], $a['placeholder'], $a['order']);
         break;
-        
+    
+    case 'identifier':
+        $field = new cp_paylink_identifier_field($a['name'], $a['label'], $a['placeholder'], $a['order']);
+        break;
+            
     case 'text':
     default:
         $field = new cp_paylink_text_field($a['name'], $a['label'], $a['placeholder'], $a['pattern'], $a['order']);
