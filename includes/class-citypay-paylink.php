@@ -1,6 +1,8 @@
 <?php
 /* Generic code for PayLink */
 
+require_once('class-citypay-library.php');
+
 class CityPay_PayLink {
 
 	private $pay_module;
@@ -58,6 +60,25 @@ class CityPay_PayLink {
 		if (is_array($conf) && !empty($conf)) { return true; }
 		return false;	// No configured currency matches the required currency
 	}
+        
+        public function setCustomParameter($name, $value, $qualifiers = null) {
+            static $_qualifiers = array(
+                    'required', 'placeholder', 'label', 'locked', 'fieldType'
+                );            
+            if (is_array($qualifiers)) {
+                $customParam = CityPay_Library::extractKeyValuesFromArray($qualifiers, $_qualifiers);
+            } else {
+                $customParam = array();
+            }
+            $customParam['name'] = $name;
+            $customParam['value'] = $value;
+            $customParams = &$this->request_config['customParams'];
+            if (is_null($customParams)) {
+                $this->request_config['customParams'] = array($customParam);
+            } else {
+                $customParams[] = $customParam;
+            }
+        }
 
 	public function setRequestAddress($fname,$lname,$addr1,$addr2,$addr3,$area,$zip,$country,$email,$phone) {
 		$this->request_addr = array(

@@ -11,7 +11,7 @@ class cp_paylink_config_stack
         array_push($this->stack, array());
     }
     
-    public function peek() {
+    public function &peek() {
         return $this->stack[$this->ptr];
     }
     
@@ -36,5 +36,17 @@ class cp_paylink_config_stack
     
     public function &get($name) {
         return $this->stack[$this->ptr][$name];
+    }
+    
+    public function &getFields() {
+        $fields = array();
+        $config = &$this->peek();
+        foreach ($config as $name => $value) {
+            if ($value instanceof cp_paylink_field) {
+                $fields[] = $value;
+            }
+        }
+        
+        return $fields;
     }
 }

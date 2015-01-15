@@ -10,6 +10,7 @@
 
 defined('ABSPATH') or die;
 
+require_once('includes/class-citypay-library.php');
 require_once('includes/class-citypay-logger.php');
 require_once('includes/class-citypay-stack.php');
 require_once('includes/class-citypay-filter.php');
@@ -108,13 +109,16 @@ function cp_paylink_payform_field_config_sort($v1, $v2) {
         
 class cp_paylink_field {
     public $id, $label, $name, $order, $placeholder;
-    public $value, $content, $error, $error_message;
-    public function __construct($id, $name, $label, $placeholder = '', $order = 99) {
+    public $value, $content, $passthrough;
+    public $error, $error_message;
+    public function __construct($id, $name, $label, $placeholder = '', $order = 99, $content = null, $passthrough = false) {
         $this->id = $id;
         $this->name = $name;
         $this->label = $label;
         $this->placeholder = $placeholder;
         $this->order = $order;
+        $this->content = $content;
+        $this->passthrough = $passthrough;
     }
     
     public function configure_error_message($attrs, $content = null) {
@@ -167,8 +171,8 @@ class cp_paylink_field {
 class cp_paylink_text_field extends cp_paylink_field {
     public $pattern;
    
-    public function __construct($id, $name, $label, $placeholder = '', $pattern = '', $order = 99) {
-        parent::__construct($id, $name, $label, $placeholder, $order);
+    public function __construct($id, $name, $label, $placeholder = '', $pattern = '', $order = 99, $content = null, $passthrough = false) {
+        parent::__construct($id, $name, $label, $placeholder, $order, $content, $passthrough);
         $this->pattern = $pattern;
     }
     
@@ -184,8 +188,8 @@ class cp_paylink_text_field extends cp_paylink_field {
 }
 
 class cp_paylink_checkbox_field extends cp_paylink_field {
-    public function __construct($id, $name, $label, $order = 99) {
-        parent::__construct($id, $name, $label, '', $order);
+    public function __construct($id, $name, $label, $order = 99, $content = null, $passthrough = false) {
+        parent::__construct($id, $name, $label, '', $order, $content, $passthrough);
     }
     
     public function parse($value_in, &$value_out) {
@@ -255,7 +259,7 @@ class cp_paylink_amount_field extends cp_paylink_text_field {
     }
     
     public function __construct($id, $name, $label, $placeholder = '', $order = 99, $decimal_places = null, $minimum = null, $maximum = null) {
-        parent::__construct($id, $name, $label, $placeholder, null, $order);
+        parent::__construct($id, $name, $label, $placeholder, null, $order, null, false);
         if (is_null($decimal_places)) {
             $this->decimal_places = null;
         } else {
@@ -373,7 +377,8 @@ function cp_paylink_payform_amount_field($attrs, $content = null) {
                     'decimal-places' => 2,
                     'minimum' => null,
                     'maximum' => null,
-                    'id' => null
+                    'id' => null,
+                    'passthrough' => false
                 ),
             $attrs
         );
@@ -412,10 +417,19 @@ function cp_paylink_payform_field($attrs, $content = null) {
                     'placeholder' => '',
                     'pattern' => '',
                     'type' => 'text',
-                    'id' => null
+                    'id' => null,
+                    'passthrough' => false
                 ),
             $attrs
         );
+    
+    if (!is_null($content)) {
+        add_shortcode('error-message', array($field, 'configure_error_message'));
+        $_content = do_shortcode($content);
+        remove_shortcode('error-message');
+    } else {
+        $_content = null;
+    }
         
     switch ($a['type'])
     {    
@@ -426,7 +440,9 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['label'],
                 $a['placeholder'],
                 null,
-                $a['order']
+                $a['order'],
+                $_content,
+                (bool) $a['passthrough']
             );
         break;
     
@@ -437,7 +453,9 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['label'],
                 $a['placeholder'],
                 null,
-                $a['order']
+                $a['order'],
+                $_content,
+                (bool) $a['passthrough']
             );
         break;
             
@@ -449,17 +467,13 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['label'],
                 $a['placeholder'],
                 $a['pattern'],
-                $a['order']
+                $a['order'],
+                $_content,
+                (bool) $a['passthrough']
             );
         break;
     }
     
-    if (!is_null($field) && !is_null($content)) {
-        add_shortcode('error-message', array($field, 'configure_error_message'));
-        do_shortcode($content);
-        remove_shortcode('error-message');
-    }
-   
     cp_paylink_config_stack()->set($field->name, $field);
     
     return '';
@@ -472,10 +486,19 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null) {
                     'name' => '',
                     'order' => 99,
                     'type' => 'checkbox',
-                    'id' => null
+                    'id' => null,
+                    'passthrough' => null
             ),
             $attrs
         );
+    
+    if (!is_null($content)) {
+        add_shortcode('error-message', array($field, 'configure_error_message'));
+        $_content = do_shortcode($content);
+        remove_shortcode('error-message');
+    } else {
+        $_content = null;
+    }
     
     switch ($a['type'])
     { 
@@ -484,7 +507,9 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null) {
                 $a['id'],
                 $a['name'],
                 $a['label'],
-                $a['order']
+                $a['order'],
+                $_content,
+                (is_bool($a['passthrough'])?(bool) $a['passthrough']:true)
             );
         break;
         
@@ -494,20 +519,12 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null) {
                 $a['id'],
                 $a['name'],
                 $a['label'],
-                $a['order']
+                $a['order'],
+                $_content,
+                (bool) $a['passthrough']
             );
         break;
         
-    }
-    
-    if (!is_null($field) && !is_null($content)) {
-        add_shortcode('error-message', array($field, 'configure_error_message'));
-        $c = do_shortcode($content);
-        remove_shortcode('error-message');
-        
-        if (!empty($c)) {
-            $field->setContent($c);
-        }
     }
     
     cp_paylink_config_stack()->set($field->name, $field);
@@ -793,6 +810,18 @@ function cp_paylink_action_pay() {
             $success_url,
             $failure_url
         );
+    
+    $fields = &cp_paylink_config_stack()->getFields();
+    foreach ($fields as $field) {
+        if ($field->passthrough === true) {
+            $paylink->setCustomParameter(
+                    $field->name,
+                    ($field->value === true),
+                    array('fieldType' => 'hidden')
+                );
+        }
+    }
+    
     try {
         $url = $paylink->getPaylinkURL();
         wp_redirect($url);
