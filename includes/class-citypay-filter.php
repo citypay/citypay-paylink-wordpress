@@ -2,7 +2,7 @@
 
 class CityPay_Filter {
     
-    function cp_paylink_get_tag($s, &$i, &$i_max)
+    public static function cp_paylink_get_tag($s, &$i, &$i_max)
     {
         $j = $i++;
 
@@ -93,7 +93,7 @@ class CityPay_Filter {
         $tag_obj = tag($tag_lc, $attrs, $j, $i, $tag_type);
     }
 
-    function cp_paylink_trim_outer_p_and_br_tags($s) {
+    public static function cp_paylink_trim_outer_p_and_br_tags($s) {
 
         $stack = array();
         $content = array();
@@ -121,7 +121,7 @@ class CityPay_Filter {
     }
 
 
-    function cp_paylink_trim_p_and_br_tags($s) {
+    public static function cp_paylink_trim_p_and_br_tags($s) {
         $i = 0;
         $i_max = strlen($s);
         while ($i < $i_max) {
