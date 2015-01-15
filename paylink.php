@@ -509,7 +509,7 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null) {
                 $a['label'],
                 $a['order'],
                 $_content,
-                (is_bool($a['passthrough'])?(bool) $a['passthrough']:true)
+                (is_null($a['passthrough'])?true:($a['passthrough'] === "true"))
             );
         break;
         
@@ -816,7 +816,7 @@ function cp_paylink_action_pay() {
         if ($field->passthrough === true) {
             $paylink->setCustomParameter(
                     $field->name,
-                    ($field->value === true),
+                    $field->value,
                     array('fieldType' => 'hidden')
                 );
         }
@@ -824,8 +824,13 @@ function cp_paylink_action_pay() {
     
     try {
         $url = $paylink->getPaylinkURL();
-        wp_redirect($url);
-        exit;
+        
+        echo '<pre>';
+        var_dump($paylink);
+        echo '</pre>';
+        
+        //wp_redirect($url);
+        //exit;
     } catch (Exception $e) {
         return CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR;
     }
