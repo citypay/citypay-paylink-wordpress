@@ -824,13 +824,8 @@ function cp_paylink_action_pay() {
     
     try {
         $url = $paylink->getPaylinkURL();
-        
-        echo '<pre>';
-        var_dump($paylink);
-        echo '</pre>';
-        
-        //wp_redirect($url);
-        //exit;
+        wp_redirect($url);
+        exit;
     } catch (Exception $e) {
         return CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR;
     }
