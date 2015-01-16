@@ -805,9 +805,10 @@ function cp_paylink_action_pay() {
             $merchant_id,
             $licence_key,
             $identifier_out,
-            $amount_out
+            $amount_out,
+            ''
         );
-    $paylink->setRequestAddress($name_out, '', '', '', '', '', '', '', $email_out);
+    $paylink->setRequestAddress($name_out, '', '', '', '', '', '', '', $email_out, '');
     $paylink->setRequestClient('Wordpress', get_bloginfo('version', 'raw'));
     $paylink->setRequestConfig(
             $test_mode,
