@@ -25,7 +25,7 @@ define(CP_PAYLINK_LICENCE_KEY, 'cp_paylink_licence_key');
 define(CP_PAYLINK_TEST_MODE, 'cp_paylink_test_mode');
 define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
     
-define(CP_PAYLINK_NAME_REGEX, '/^\s*(?:\b(Mr|Mrs|Miss|Dr)\.?\b)?+\b\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
+define(CP_PAYLINK_NAME_REGEX, '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
 define(CP_PAYLINK_EMAIL_REGEX, '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)$/');
 define(CP_PAYLINK_IDENTIFIER_REGEX, '/[A-Za-z0-9]{5,}/');
 
