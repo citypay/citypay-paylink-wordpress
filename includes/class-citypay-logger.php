@@ -10,7 +10,7 @@ class CityPay_Logger
                 'Windows NT' => "\n\r"
             );
         
-        if (in_array($playform)) {
+        if (array_key_exists($platform, $map)) {
             return $map[$platform];
         } else {
             return "\n";
