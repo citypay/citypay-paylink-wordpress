@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.0.0
+ * Version: 0.0.2.RELEASE
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -25,6 +25,7 @@ define(CP_PAYLINK_LICENCE_KEY, 'cp_paylink_licence_key');
 define(CP_PAYLINK_TEST_MODE, 'cp_paylink_test_mode');
 define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
     
+define(CP_PAYLINK_NAME_REGEX, '/^\s*(?:\b(Mr|Mrs|Miss|Dr)\.?\b)?+\b\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
 define(CP_PAYLINK_EMAIL_REGEX, '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)$/');
 define(CP_PAYLINK_IDENTIFIER_REGEX, '/[A-Za-z0-9]{5,}/');
 
@@ -47,14 +48,19 @@ define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID, -201);
 define(CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING, -300);
 define(CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID, -301);
 
-define(CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED, -400);
+define(CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING, -400);
+define(CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID, -401);
+
+define(CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED, -500);
 
 define(CP_PAYLINK_DEFAULT_ERROR_MESSAGE, 'cp_paylink_default_error_messages');
 
 $cp_paylink_default_error_messages = array(
-        CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING => __('Text field parse error: empty string'),   
+        CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING => __('Text field parse error: empty string'),
         CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING => __('Identifier field parse error: empty string'),
         CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID => __('Identifier field parse error: not valid'),
+        CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING => __('Name field parse error: empty string'),
+        CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID => __('Name field parse error: not valid'),
         CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING => __('Email address field parse error: empty string'),
         CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID => __('Email address field parse error: not valid'),
         CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING => __('Amount field parse error: empty string'),
@@ -185,6 +191,7 @@ class cp_paylink_text_field extends cp_paylink_field {
     public function parse($value_in, &$value_out) {
         $r = parent::parse($value_in, $value_out);
         if ($r) {
+            // See PPWD-3, and PPWD-13
             if (strlen($value_out) == 0x00) {
                 $this->error = CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING;
             }
@@ -321,6 +328,31 @@ class cp_paylink_amount_field extends cp_paylink_text_field {
     }
 }
 
+class cp_paylink_customer_name_field extends cp_paylink_text_field {
+    public function parse($value_in, &$value_out) {
+        $r = parent::parse($value_in, $value_out);
+        if ($r) {
+            if (strlen($value_out) == 0x00) {
+                $this->error = CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING;
+            } else {
+                $matches = array();
+                $r = preg_match(CP_PAYLINK_NAME_REGEX, $this->value, $matches);
+                if ($r) {
+                    $value_out = array(
+                            'salutation' => $matches[1],
+                            'first-name' => $matches[2],
+                            'middle-initial' => $matches[3],
+                            'last-name' => $matches[4]
+                        );
+                } else {
+                    $this->error = CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID;
+                }
+            }
+        }
+        return $r;
+    }
+}
+
 class cp_paylink_email_field extends cp_paylink_text_field {
     public function parse($value_in, &$value_out) {
         $r = parent::parse($value_in, $value_out);
@@ -432,6 +464,19 @@ function cp_paylink_payform_field($attrs, $content = null) {
     
     switch ($a['type'])
     {    
+    case 'customer-name':
+        $field = new cp_paylink_customer_name_field(
+                $a['id'],
+                $a['name'],
+                $a['label'], 
+                $a['placeholder'],
+                null,
+                $a['order'],
+                null,
+                (bool) $a['passthrough']
+            );
+        break;
+        
     case 'email-address':
         $field = new cp_paylink_email_field(
                 $a['id'],
@@ -808,7 +853,15 @@ function cp_paylink_action_pay() {
             $amount_out,
             ''
         );
-    $paylink->setRequestAddress($name_out, '', '', '', '', '', '', '', $email_out, '');
+       
+    $paylink->setRequestAddress(
+            $name_out['first-name'], 
+            $name_out['last-name'],
+            '', '', '', '', '', '',
+            $email_out,
+            ''
+        );
+    
     $paylink->setRequestClient('Wordpress', get_bloginfo('version', 'raw'));
     $paylink->setRequestConfig(
             $test_mode,
