@@ -129,6 +129,12 @@ class cp_paylink_field {
                 $attrs
             );
         
+        /*echo '<pre>';
+        var_dump($a);
+        var_dump($attrs);
+        debug_print_backtrace();
+        echo '</pre>';*/
+        
         $h = constant($a['handle']);
         if (!is_null($h)) {
             $this->error_message[$h] = $content;
@@ -396,8 +402,9 @@ function cp_paylink_payform_amount_field($attrs, $content = null) {
     
     if (!is_null($field) && !is_null($content)) {
         add_shortcode('error-message', array($field, 'configure_error_message'));
-        do_shortcode($content);
+        $_content = do_shortcode($content);
         remove_shortcode('error-message');
+        $field->setContent($_content);
     }
         
     cp_paylink_config_stack()->set(
@@ -423,14 +430,6 @@ function cp_paylink_payform_field($attrs, $content = null) {
             $attrs
         );
     
-    if (!is_null($content)) {
-        add_shortcode('error-message', array($field, 'configure_error_message'));
-        $_content = do_shortcode($content);
-        remove_shortcode('error-message');
-    } else {
-        $_content = null;
-    }
-        
     switch ($a['type'])
     {    
     case 'email-address':
@@ -441,7 +440,7 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['placeholder'],
                 null,
                 $a['order'],
-                $_content,
+                null,
                 (bool) $a['passthrough']
             );
         break;
@@ -454,7 +453,7 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['placeholder'],
                 null,
                 $a['order'],
-                $_content,
+                null,
                 (bool) $a['passthrough']
             );
         break;
@@ -468,10 +467,17 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['placeholder'],
                 $a['pattern'],
                 $a['order'],
-                $_content,
+                null,
                 (bool) $a['passthrough']
             );
         break;
+    }
+    
+    if (!is_null($field) && !is_null($content)) {
+        add_shortcode('error-message', array($field, 'configure_error_message'));
+        $_content = do_shortcode($content);
+        remove_shortcode('error-message');
+        $field->setContent($_content);
     }
     
     cp_paylink_config_stack()->set($field->name, $field);
@@ -492,14 +498,6 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null) {
             $attrs
         );
     
-    if (!is_null($content)) {
-        add_shortcode('error-message', array($field, 'configure_error_message'));
-        $_content = do_shortcode($content);
-        remove_shortcode('error-message');
-    } else {
-        $_content = null;
-    }
-    
     switch ($a['type'])
     { 
     case 'accept-terms-and-conditions':
@@ -508,7 +506,7 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null) {
                 $a['name'],
                 $a['label'],
                 $a['order'],
-                $_content,
+                null,
                 (is_null($a['passthrough'])?true:($a['passthrough'] === "true"))
             );
         break;
@@ -520,11 +518,18 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null) {
                 $a['name'],
                 $a['label'],
                 $a['order'],
-                $_content,
+                null,
                 (bool) $a['passthrough']
             );
         break;
         
+    }
+        
+    if (!is_null($field) && !is_null($content)) {
+        add_shortcode('error-message', array($field, 'configure_error_message'));
+        $_content = do_shortcode($content);
+        remove_shortcode('error-message');
+        $field->setContent($_content);
     }
     
     cp_paylink_config_stack()->set($field->name, $field);
@@ -1064,5 +1069,11 @@ function cp_paylink_settings_page() {
     echo '</div>';
 }
 
+function cp_paylink_exempt_shortcodes_from_texturize($shortcodes) {
+    $shortcodes[] = 'citypay-payform';
+    return $shortcodes;
+}
+
 add_action('init', 'cp_paylink_init');
 add_action('wp_loaded', 'cp_paylink_wp_loaded');
+add_filter('no_texturize_shortcodes', 'cp_paylink_exempt_shortcodes_from_texturize');
