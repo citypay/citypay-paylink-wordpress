@@ -839,7 +839,12 @@ function cp_paylink_action_pay() {
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
     }
    
-    $current_url = add_query_arg('page_id', $page_id, get_home_url());
+    if (get_option('permalink_structure')) {
+        $current_url = get_permalink($page_id);
+    } else {
+        $current_url = add_query_arg('page_id', $page_id, get_home_url());
+    }
+    
     $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
     $success_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'success', $current_url);
     $failure_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', $current_url);
