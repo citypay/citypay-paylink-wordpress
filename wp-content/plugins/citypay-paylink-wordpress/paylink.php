@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 0.0.2.RELEASE
+ * Version: 1.0.5.RELEASE
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -19,41 +19,41 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
-define(CP_PAYLINK_DISPATCHER, 'cp_paylink');
-define(CP_PAYLINK_MERCHANT_ID, 'cp_paylink_merchant_id');
-define(CP_PAYLINK_LICENCE_KEY, 'cp_paylink_licence_key');
-define(CP_PAYLINK_TEST_MODE, 'cp_paylink_test_mode');
-define(CP_PAYLINK_DEBUG_MODE, 'cp_paylink_debug_mode');
+define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
+define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
+define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
+define('CP_PAYLINK_TEST_MODE', 'cp_paylink_test_mode');
+define('CP_PAYLINK_DEBUG_MODE', 'cp_paylink_debug_mode');
     
-define(CP_PAYLINK_NAME_REGEX, '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
-define(CP_PAYLINK_EMAIL_REGEX, '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)+$/');
-define(CP_PAYLINK_IDENTIFIER_REGEX, '/[A-Za-z0-9]{5,}/');
+define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
+define('CP_PAYLINK_EMAIL_REGEX', '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)+$/');
+define('CP_PAYLINK_IDENTIFIER_REGEX', '/[A-Za-z0-9]{5,}/');
 
-define(CP_PAYLINK_NO_ERROR, 0x00);
+define('CP_PAYLINK_NO_ERROR', 0x00);
 
-define(CP_PAYLINK_AMOUNT_PARSE_ERROR, -1);
-define(CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING, -2);
-define(CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER, -3);
-define(CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION, -4);
-define(CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE, -5);
-define(CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE, -6);
+define('CP_PAYLINK_AMOUNT_PARSE_ERROR', -1);
+define('CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING', -2);
+define('CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER', -3);
+define('CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION', -4);
+define('CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE', -5);
+define('CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE', -6);
 
-define(CP_PAYLINK_DEFAULT_MINIMUM_AMOUNT, 0);
+define('CP_PAYLINK_DEFAULT_MINIMUM_AMOUNT', 0);
 
-define(CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING, -100);
+define('CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING', -100);
 
-define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING, -200);
-define(CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID, -201);
+define('CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING', -200);
+define('CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID', -201);
 
-define(CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING, -300);
-define(CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID, -301);
+define('CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING', -300);
+define('CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID', -301);
 
-define(CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING, -400);
-define(CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID, -401);
+define('CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING', -400);
+define('CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID', -401);
 
-define(CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED, -500);
+define('CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED', -500);
 
-define(CP_PAYLINK_DEFAULT_ERROR_MESSAGE, 'cp_paylink_default_error_messages');
+define('CP_PAYLINK_DEFAULT_ERROR_MESSAGE', 'cp_paylink_default_error_messages');
 
 $cp_paylink_default_error_messages = array(
         CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING => __('Text field parse error: empty string'),
@@ -71,8 +71,8 @@ $cp_paylink_default_error_messages = array(
         CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED => __('Terms and conditions must be accepted')
     );
 
-define(CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR, 0x05);
-define(CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR, 0x06);
+define('CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR', 0x05);
+define('CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR', 0x06);
 
 function cp_paylink_config_stack() {
     static $cp_paylink_config_stack = NULL;
