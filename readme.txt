@@ -148,6 +148,15 @@ configuration file for PHP using the curl.cainfo configuration setting.
 
 == Changelog ==
 
+= 1.0.5 =
+
+* Improved project structure, and unit tests.
+
+= 1.0.4 =
+
+* Version number skipped to bring project in line with version delivered
+  to customers.
+
 = 1.0.3 =
 
 * Resolution for incorrect email address parsing / recognition (per PPWD-21)
@@ -165,6 +174,15 @@ configuration file for PHP using the curl.cainfo configuration setting.
 * Initial version.
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+
+* Update follows improvement to the structure of the project.
+
+= 1.0.4 =
+
+* Version number skipped to bring project in line with version delivered
+  to customers.
 
 = 1.0.3 =
 

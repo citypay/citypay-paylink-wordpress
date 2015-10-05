@@ -1,14 +1,30 @@
 <?php
 
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/*
+ * The following constant / macro definition is included to prevent
+ * phpunit from quiting upon reaching the test defined, as follows, to
+ * prevent an attacker from trying to invoke specific PHP scripts
+ * independently of the core Wordpress application -
+ * 
+ *      defined('ABSPATH') or die;
+ * 
  */
 
-require('paylink.php');
+define('ABSPATH', true);
 
-//define("CP_PAYLINK_EMAIL_REGEX", '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)+$/');
+/*
+ * The following Wordpress plugin -specific functions are provided to
+ * enable the paylink.php file to be loaded: these functions are called
+ * outside the context of class definitions and therefore execute
+ * immediately upon loading of the relevant file.
+ * 
+ */
+
+function __($s) { return $s; }
+function add_action($a, $b) { }
+function add_filter($a, $b) { }
+
+require('./wp-content/plugins/citypay-paylink-wordpress/paylink.php');
 
 class EmailRegexCheckTest extends PHPUnit_Framework_TestCase {
    
@@ -18,13 +34,9 @@ class EmailRegexCheckTest extends PHPUnit_Framework_TestCase {
         'xxx@xxx.yy.zz.qq' => true
     );
     
-    public function testDump()
-    {
-        var_dump($this->testEmailAddresses);
-    }
-    
     public function testEmailAddressRegex()
     {        
+        echo "\n";
         foreach ($this->testEmailAddresses as $emailAddress => $result) {
             echo "Testing: ${emailAddress}\n";
             $r = preg_match(CP_PAYLINK_EMAIL_REGEX, $emailAddress);
@@ -37,5 +49,4 @@ class EmailRegexCheckTest extends PHPUnit_Framework_TestCase {
         
         return;
     }
-    
 }
