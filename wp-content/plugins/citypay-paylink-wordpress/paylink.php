@@ -65,11 +65,11 @@ $cp_paylink_default_error_messages = array(
         CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING
             => __('This field cannot be empty.'),
         CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID
-            => __('This field does not contain an acceptable value. Please enter a person\'s name of the form <b>&lt;firstname&gt; &lt;lastname&gt;</b>'),
+            => __('This field does not contain an acceptable value. Please enter a person\'s name of the form <b>&lt;firstname&gt; &lt;lastname&gt;</b>.'),
         CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING
             => __('This field cannot be empty.'),
         CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID
-            => __('This field does not contain an acceptable value. Please enter a valid email address of the form <b>&lt;name&gt;@&lt;domain-name&gt;</b>'),
+            => __('This field does not contain an acceptable value. Please enter a valid email address of the form <b>&lt;name&gt;@&lt;domain-name&gt;</b>.'),
         CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING
             => __('This field cannot be empty.'),
         CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER
