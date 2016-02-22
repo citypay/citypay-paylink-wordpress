@@ -3,7 +3,7 @@
 <project name="citypay-paylink-wordpress" default="dist">
     
     <property name="package" value="${phing.project.name}" override="true" />
-    <property name="version" value="1.0.5" override="true" />
+    <property name="version" value="1.0.6" override="true" />
     <propertyregex property="packageversion"
         subject="${package}_${version}"
         pattern="\."
@@ -49,7 +49,7 @@
     <target name="build" depends="prepare">
         <echo msg="Copying files to build directory..." />
         <mkdir dir="${builddir}" />
-        <mkdir dir="${packageversion}" />
+        <mkdir dir="${builddir}/${packageversion}" />
         <copy todir="${builddir}/${packageversion}">
             <fileset dir="./wp-content/plugins">
                 <include name="citypay-paylink-wordpress/**/*.php" />
