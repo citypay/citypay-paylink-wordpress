@@ -8,7 +8,13 @@ Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-CityPay Paylink PayForm WWP is a plugin that supplements Wordpress with
+CityPay Paylink PayForm WP is a plugin that supplements Wordpress with
+support for a form leading to payment processing using CityPay hosted payment
+forms.
+
+== Description ==
+
+CityPay Paylink PayForm WP is a plugin that supplements Wordpress with
 support for a form leading to payment processing using CityPay hosted payment
 forms.
 
@@ -18,16 +24,15 @@ to pay to the merchant by reference to some sort of customer or invoice
 identifier; the plugin does not at present provide or support -
 
  * shopping cart functionality;
- * connectivity between any external source of verification for invoice
-references, and amounts payable thereunder; and
+ * connectivity between any external source of verification of invoice
+references, amounts payable thereunder or any external database able
+to receive notification of successful and failed payment transactions; and
  * maintenance of any records of payments or payment attempts that can be
 accessed from the Wordpress console.
 
-== Description ==
-
 == Installation ==
 
-= Minimum requirements =
+# Minimum requirements
 
 * PHP version 5.2.4 or greater with libcurl support
 * MySQL version 5.0 or greater
@@ -35,7 +40,7 @@ accessed from the Wordpress console.
 * openssl, to current patch levels
 * WordPress 4.0 or greater
 
-= Automatic installation =
+# Automatic installation
 
 To perform an automatic installation of the CityPay Paylink Wordpress plugin,
 login to your WordPress dashboard, select the Plugins menu and click Add New.
@@ -43,7 +48,7 @@ login to your WordPress dashboard, select the Plugins menu and click Add New.
 In the search field, type "CityPay" and click Search Plugins. Once you have
 found our payment gateway plugin, it may be installed by clicking Install Now.
 
-= Manual installation =
+# Manual installation
 
 The perform a manual installation of the CityPay Paylink Wordpress plugin,
 login to your WordPress dashboard, select the Plugins menu and click Add New. 
@@ -52,7 +57,7 @@ Then select Upload Plugin, browse to the location of the ZIP file containing
 the plugin (typically named *citypay-paylink-wordpress.zip*) and then click
 Install Now.
 
-= Post installation: the plugin settings form =
+# Post installation: the plugin settings form
 
 Once the plugin has been installed, you may need to activate it by selecting
 the Plugins menu, clicking Installed Plugins and then activating the plugin
@@ -62,25 +67,12 @@ Activate.
 The merchant account, the license key, the transaction currency and other
 information relating to the processing of transactions through the CityPay
 Paylink hosted form payment gateway may be configured by selecting the
-plugin configuration form which is accessed indirectly through the
-
-
-WooCommerce settings page upon selecting the Checkout tab,
-
-and clicking on
-the link labeled CityPay which appears in the list of available payment
-methods.
-
-You can include the WooCommerce order identifier in the description sent
-to CityPay for the purpose of including a customer-friendly reference in
-the email sent to the customer on conclusion of the transaction. This is
-achieved by specifying {order_id} as part of the descriptive text appearing
-in the text box labeled Transaction Description.
+settings page which is accessed through the Wordpress plugins page.
 
 After the settings for the plugin have been configured, they must be saved
-by clicking on the button labeled Save Changes before they take effect.
+by clicking on the button labeled 'Save Changes' before they take effect.
 
-= Creating a page in Wordpress to accept payments =
+## Creating a page in Wordpress to accept payments
 
 To accept payments using the plugin, it is necessary to create and mark-up
 a static page containing the layout, fields, field names and custom error
@@ -140,128 +132,147 @@ short codes, as follows -
 PayForm WP plugin thereby providing the context for configuration, display
 and processing of the payment processing forms.
 
-== PayForm active short codes ==
+## PayForm active short codes
+
+### On page load
 
 `[citypay-payform-on-page-load]`, and `[/citypay-payform-on-page-load]`:
 indicates the actions to be performed by Wordpress on initial loading
 the page.
 
-`[citypay-payform-display /]`: instructs Wordpress to display the PayForm
-in the relevant action. The text to be used for the submit button is, by 
-default 'XXXXX'; however, this may be overridden by specifying a the `submit`
-attribute of the short code as follows -
+### Display
+
+`[citypay-payform-display /]`: instructs Wordpress to display the payment
+initiating form in the relevant action. The text to be used for the submit
+button is specified using the `submit` shortcode attribute as follows -
 
     [citypay-payform-display submit="Pay this invoice" /]
+
+### On redirect success
 
 `[citypay-payform-on-redirect-success]`, and
 `[/citypay-payform-on-redirect-success]`: indicates the action to be performed
 by Wordpress on payment processing being completed successfully.
 
+### On redirect failure
+
 `[citypay-payform-on-redirect-failure]`, and
 `[/citypay-payform-on-redirect-failure]`: indicates the action to be performed
 by Wordpress on failure of the payment process.
+
+### On redirect cancel
 
 `[citypay-payform-on-redirect-cancel]`, and
 `[/citypay-payform-on-redirect-cancel]`: indicates the action to be performed
 by Wordpress on cancellation of the payment process.
 
+### On error
+
 `[citypay-payform-on-error]`, and `[/citypay-payform-on-error]`: indicates the
 action to be performed by Wordpress on the occurrence of an error. 
 
-== PayForm configuration short codes ==
+## PayForm configuration short codes
+
+### Text fields
 
 `[citypay-payform-field]`, and `[/citypay-payform-field]`: enables configuration
 of the various text-based PayForm fields by reference to the following shortcode
 attributes -
 
-    `label`: specifies the text to be generated by Wordpress for the relevant
-        field.
+`label`: specifies the text to be generated by Wordpress for the relevant
+    field.
 
-    `name`: specifies the name of the field which is used to identify the
-        value in the context of the form submitted to Wordpress on submission
-        of the PayForm.
+`name`: specifies the name of the field which is used to identify the
+    value in the context of the form submitted to Wordpress on submission
+    of the PayForm.
 
-    `order`: specifies the order of the field on the PayForm generated by
-        Wordpress.
+`order`: specifies the order of the field on the PayForm generated by
+    Wordpress.
 
-    `placeholder`: specifies the text, if any, to be generated as a placeholder
-        for the relevant PayForm field.
+`placeholder`: specifies the text, if any, to be generated as a placeholder
+    for the relevant PayForm field.
 
-    `pattern`: specifies the pattern, if any, that the value submitted by
-        the visitor must conform with prior to being referred to the CityPay
-        PayLink hosted payment form.
+`pattern`: specifies the pattern, if any, that the value submitted by
+    the visitor must conform with prior to being referred to the CityPay
+    PayLink hosted payment form.
 
-    `type`: provides one of the following values `customer-name`,
-        `email-address`, `identifier` and `text` representing the type of
-        the relevant field, thereby guiding processing.
+`type`: provides one of the following values `customer-name`,
+    `email-address`, `identifier` and `text` representing the type of
+    the relevant field, thereby guiding processing.
 
-    `id`: specifies the identifier, if any, for the HTML form input field
-        generated by Wordpress for the relevant field to enable
-        cross-referencing and automation by, for example and only if
-        necessary, JavaScript scripts deployed through supplementary
-        Wordpress.
+`id`: specifies the identifier, if any, for the HTML form input field
+    generated by Wordpress for the relevant field to enable
+    cross-referencing and automation by, for example and only if
+    necessary, JavaScript scripts deployed through supplementary
+    Wordpress.
 
-    `passthrough`: a boolean value indicating that the value submitted by the
-        visitor should be passed to the CityPay PayLink hosted payment form
-        as a PayLink 'custom parameter' using a hidden field.
+`passthrough`: a boolean value indicating that the value submitted by the
+    visitor should be passed to the CityPay PayLink hosted payment form
+    as a PayLink 'custom parameter' using a hidden field.
+
+### Amount fields
 
 `[citypay-payform-amount-field]`, and `[/citypay-payform-amount-field]`:
 enables configuration of a currency amount-based PayForm field by reference
 to the following shortcode attributes -
        
-    `id`: specifies the identifier, if any, for the HTML form input field
-        generated by Wordpress for the relevant field to enable
-        cross-referencing and automation by, for example and only if
-        necessary, JavaScript scripts deployed through supplementary
-        Wordpress.
+`id`: specifies the identifier, if any, for the HTML form input field
+    generated by Wordpress for the relevant field to enable
+    cross-referencing and automation by, for example and only if
+    necessary, JavaScript scripts deployed through supplementary
+    Wordpress.
 
-    `label`: specifies the text to be generated by Wordpress for the relevant
-        field.
+`label`: specifies the text to be generated by Wordpress for the relevant
+    field.
 
-    `maximum`: specifies the maximum amount for which the prospective
-        transaction is to be processed, thereby enabling the PayForm to
-        decline transactions the exceed floor limits, or may erroneous.
+`maximum`: specifies the maximum amount for which the prospective
+    transaction is to be processed, thereby enabling the PayForm to
+    decline transactions the exceed floor limits, or may erroneous.
 
-    `minimum`: specifies the minimum amount for which the prospective
-        transaction is to be processed, thereby enabling the PayForm to
-        decline low value transactions that fall below an economic
-        value to handle electronically.
+`minimum`: specifies the minimum amount for which the prospective
+    transaction is to be processed, thereby enabling the PayForm to
+    decline low value transactions that fall below an economic
+    value to handle electronically.
 
-    `name`: specifies the name of the field which is used to identify the
-        value in the context of the form submitted to Wordpress on submission
-        of the PayForm.
+`name`: specifies the name of the field which is used to identify the
+    value in the context of the form submitted to Wordpress on submission
+    of the PayForm.
 
-    `order`: specifies the order of the field on the PayForm generated by
-        Wordpress.
+`order`: specifies the order of the field on the PayForm generated by
+    Wordpress.
+
+### Checkbox fields
 
 [citypay-payform-checkbox-field]`, and `[/citypay-payform-checkbox-field]`:
 enables configuration of a checkbox-based PayForm field by reference to the
 following shortcode attributes -
 
-    `id`: specifies the identifier, if any, for the HTML form input field
-        generated by Wordpress for the relevant field to enable
-        cross-referencing and automation by, for example and only if
-        necessary, JavaScript scripts deployed through supplementary
-        Wordpress.
+`id`: specifies the identifier, if any, for the HTML form input field
+    generated by Wordpress for the relevant field to enable
+    cross-referencing and automation by, for example and only if
+    necessary, JavaScript scripts deployed through supplementary
+    Wordpress.
 
-    `name`: specifies the name of the field which is used to identify the
-        value in the context of the form submitted to Wordpress on submission
-        of the PayForm.
+`name`: specifies the name of the field which is used to identify the
+    value in the context of the form submitted to Wordpress on submission
+    of the PayForm.
 
-    `type`: provides one of the following values `accept-terms-and-conditions`,
-        and `checkbox` representing the type of the relevant check-box field,
-        thereby guiding processing.
+`type`: provides one of the following values `accept-terms-and-conditions`,
+    and `checkbox` representing the type of the relevant check-box field,
+    thereby guiding processing.
 
-        `accept-terms-and-conditions`
+    `accept-terms-and-conditions`
 
-        A checkbox field with the type set to `accept-terms-and-conditions`,
-        is a special checkbox that prevents onward processing of the PayForm
-        if the visitor is unwilling to accede to the merchant's terms and
-        conditions in connection with the payment. This step is typically
-        required by acquirers to avoid unnecessary charge-back disputes.
+    A checkbox field with the type set to `accept-terms-and-conditions`,
+    is a special checkbox that prevents onward processing of the PayForm
+    if the visitor is unwilling to accede to the merchant's terms and
+    conditions in connection with the payment. This step is typically
+    required by acquirers to avoid unnecessary charge-back disputes.
 
-    `order`: specifies the order of the field on the PayForm generated by
-        Wordpress.
+`order`: specifies the order of the field on the PayForm generated by
+    Wordpress.
+
+### Error messages
 
 `[error-message]` and `[/error-message]`: enables configuration of the error
     messages associated with particular field-based error events. The error
@@ -269,84 +280,99 @@ following shortcode attributes -
     on a field-by-field basis to enable errors associated with individual field
     error events to be tailored to customer requirements. 
 
-    `handle`: refers to the handle for the relevant error message as follows -
+`handle`: refers to the handle for the relevant error message as follows -
 
-        `CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING`: 
+`CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING`: the error generated
+    if the value submitted to a text field is an empty string.
 
-        `CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING`:
+`CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING`: the error
+    generated if the value submitted to a text field where the
+    `type` is set to `identifier` is an empty string.
 
-        `CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID`:
+`CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID`: the error
+    generated if the value submitted to a text field where the
+    `type` is set to `identifier` is, when parsed by reference to
+    the `pattern` indicated for the shortcode, found to be invalid.
 
-        `CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING`:
+`CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING`: the error generated
+    if the value submitted to a text field where the `type` is set
+    to `customer-name` is an empty string.
 
-        `CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID`:
+`CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID`: the error generated
+    if the value submitted to a text field where the `type` is set
+    to `customer-name` is, when parsed, found to be invalid.
 
-        `CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID`:
+`CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING`: the error
+    generated if the value submitted to a text field where the `type`
+    is set to `email-address` is an empty string.
 
-        `CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING`:
+`CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID`: the error
+    generated if the value submitted to a text field where the `type`
+    is set to `email-address` is, when parsed, found to be invalid.
 
-        `CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER`:
+`CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING`: the error generated if
+    the value submitted to an amount field is found to be invalid. A
+    value is invalid if it cannot be converted to a numerical value.
 
-        `CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION`:
+`CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER`: the error generated
+    if the value submitted to an amount field is found to contain one
+    or more invalid characters such as upper and lower letters (A-Z, and
+    a-z respectively), and punctuation such as ',' (commas), '£' (pound
+    signs), '$' (dollar signs) and so forth. The only permissible
+    characters for an amount value are numeric (0-9) and a single
+    period (.) being the decimal point indicating the fractional
+    component of an amount.
 
-        `CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE`: the error
-            generated if the value submitted to a currency amount-based
-            is below the specified minimum value.
+`CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION`: the error generated
+    if the value submitted to an amount field has been specified, for
+    the relevant currency, to an invalid precision. This error typically
+    occurs if the fractional component of the amount has been specified
+    to more decimal places than expected for the relevant currency.
 
-        `CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE`: the error
-            generated if the value submitted to a currency amount-based
-            is above the specified maximum value.
+`CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE`: the error
+    generated if the value submitted to a currency amount-based
+    is below the specified minimum value.
 
-        `CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED`
+`CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE`: the error
+    generated if the value submitted to a currency amount-based
+    is above the specified maximum value.
 
-    
+`CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED`: the error generated
+    if a checkbox where the `type` is set to `terms-and-conditions`
+    is left unchecked on submission of the relevant form.
 
-=> __('Text field parse error: empty string'),
-         => __('Identifier field parse error: empty string'),
-         => __('Identifier field parse error: not valid'),
-         => __('Name field parse error: empty string'),
-         => __('Name field parse error: not valid'),
-         => __('Email address field parse error: empty string'),
-         => __('Email address field parse error: not valid'),
-         => __('Amount field parse error: empty string'),
-         => __('Amount field parse error: invalid character'),
-         => __('Amount field parse error: invalid precision'),
-         => __('Amount field parse error: below minimum value'),
-         => __('Amount field parse error: above maximum value'),
-         => __('Terms and conditions must be accepted')
+Example:
 
+    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING"]
+        You have specified an empty string (testing "").
+    [/error-message]
+    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER"]
+        You have specified an invalid character.
+    [/error-message]
+    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION"]
+        You have put too many digits after the decimal point.
+    [/error-message]
+    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE"]
+        You have specified an amount that less than that the practice is able to accept.
+    [/error-message]
+    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE"]
+        You have specified an amount that more than that the practice is able to accept.
+    [/error-message]
 
-
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING"]
-                You have specified an empty string (testing "").
-            [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER"]
-                You have specified an invalid character.
-            [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION"]
-                You have put too many digits after the decimal point.
-            [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE"]
-                You have specified an amount that less than that the practice is able to accept.
-            [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE"]
-                You have specified an amount that more than that the practice is able to accept.
-            [/error-message]
-
-= Processing test transactions =
+## Processing test transactions
 
 To test the operation of an e-commerce solution based on WooCommerce in
 combination with the CityPay Paylink WooCommerce plugin without processing
 transactions that will be settled by the upstream acquirer, the check box
 labeled Test Mode appearing on the plugin settings form should be ticked.
 
-= Processing live transactions =
+## Processing live transactions
 
 To process live transactions for settlement by the upstream acquirer, the
 check box labeled Test Mode referenced in the paragraph above must be
 unticked.
 
-= Enabling logging =
+## Enabling logging
 
 The interaction between WordPress, WooCommerce and the CityPay Paylink
 hosted payment form service may be monitored by ticking the check box labeled
@@ -358,9 +384,9 @@ Paylink service.
 
 The location of the log file is provided on the plugin settings form.
 
-== Frequently Asked Questions ==
+## Frequently Asked Questions
 
-= WordPress / WooCommerce displays "Sorry, unable to process your order at this time" at the time of checkout =
+### WordPress / WooCommerce displays "Sorry, unable to process your order at this time" at the time of checkout
 
 WordPress / WooCommerce displays the generic error "Sorry, unable to process
 your order at this time" if is not possible for the application to refer the
@@ -391,7 +417,7 @@ If the connection failure is not persistent, and intermittent in nature, the
 problem is most likely caused by connectivity or DNS name resolution problems
 affecting the merchant application generally.
 
-= CityPay Paylink service connectivity issues involving WordPress / WooCommerce implementations =
+### CityPay Paylink service connectivity issues involving WordPress / WooCommerce implementations
 
 The CityPay Paylink WooCommerce plugin relies upon being able to establish
 a secure, encrypted session with the CityPay Paylink service. The OpenSSL
