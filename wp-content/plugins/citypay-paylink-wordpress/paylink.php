@@ -56,19 +56,32 @@ define('CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED', -500);
 define('CP_PAYLINK_DEFAULT_ERROR_MESSAGE', 'cp_paylink_default_error_messages');
 
 $cp_paylink_default_error_messages = array(
-        CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING => __('Text field parse error: empty string'),
-        CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING => __('Identifier field parse error: empty string'),
-        CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID => __('Identifier field parse error: not valid'),
-        CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING => __('Name field parse error: empty string'),
-        CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID => __('Name field parse error: not valid'),
-        CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING => __('Email address field parse error: empty string'),
-        CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID => __('Email address field parse error: not valid'),
-        CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING => __('Amount field parse error: empty string'),
-        CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER => __('Amount field parse error: invalid character'),
-        CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION => __('Amount field parse error: invalid precision'),
-        CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE => __('Amount field parse error: below minimum value'),
-        CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE => __('Amount field parse error: above maximum value'),
-        CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED => __('Terms and conditions must be accepted')
+        CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING
+            => __('This field cannot be empty.'),
+        CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING
+            => __('This field cannot be empty.'),
+        CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID
+            => __('This field does not contain an acceptable value.'),
+        CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING
+            => __('This field cannot be empty.'),
+        CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID
+            => __('This field does not contain an acceptable value. Please enter a person\'s name of the form <firstname> <lastname>'),
+        CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING
+            => __('This field cannot be empty.'),
+        CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID
+            => __('This field does not contain an acceptable value. Please enter a valid email address of the form <name>@<domain-name>'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING
+            => __('This field cannot be empty.'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER
+            => __('This field contains an invalid character; only numeric digits and a decimal point are acceptable.'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION
+            => __('This field contains a value with too many digits appearing after the decimal point, and is therefore unacceptable.'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE
+            => __('This field contains a monetary amount that is below the lowest acceptable value for transactions processed using this service.'),
+        CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE
+            => __('This field contains a monetary amount that is more than the maxmimum acceptable value for transactions processed using this service.'),
+        CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED
+            => __('You must accept the terms and conditions to use this service.')
     );
 
 define('CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR', 0x05);
