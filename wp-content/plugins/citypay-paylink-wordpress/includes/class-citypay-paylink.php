@@ -61,24 +61,24 @@ class CityPay_PayLink {
 		return false;	// No configured currency matches the required currency
 	}
         
-        public function setCustomParameter($name, $value, $qualifiers = null) {
-            static $_qualifiers = array(
-                    'required', 'placeholder', 'label', 'locked', 'fieldType'
-                );            
-            if (is_array($qualifiers)) {
-                $customParam = CityPay_Library::extractKeyValuesFromArray($qualifiers, $_qualifiers);
-            } else {
-                $customParam = array();
-            }
-            $customParam['name'] = $name;
-            $customParam['value'] = $value;
-            $customParams = &$this->request_config['customParams'];
-            if (is_null($customParams)) {
-                $this->request_config['customParams'] = array($customParam);
-            } else {
-                $customParams[] = $customParam;
-            }
+    public function setCustomParameter($name, $value, $qualifiers = null) {
+        static $_qualifiers = array(
+                'required', 'placeholder', 'label', 'locked', 'fieldType'
+            );            
+        if (is_array($qualifiers)) {
+            $customParam = CityPay_Library::extractKeyValuesFromArray($qualifiers, $_qualifiers);
+        } else {
+            $customParam = array();
         }
+        $customParam['name'] = $name;
+        $customParam['value'] = $value;
+        $customParams = &$this->request_config['customParams'];
+        if (is_null($customParams)) {
+            $this->request_config['customParams'] = array($customParam);
+        } else {
+            $customParams[] = $customParam;
+        }
+    }
 
 	public function setRequestAddress($fname,$lname,$addr1,$addr2,$addr3,$area,$zip,$country,$email,$phone) {
 		$this->request_addr = array(
@@ -97,12 +97,13 @@ class CityPay_PayLink {
 
 	public function setRequestCart($mid,$key,$cart_id,$price,$cart_desc) {
 		$this->request_cart = array(
-			'merchantid'	=> (int)$mid,
-			'licenceKey'	=> $key,
-			'identifier'	=> trim($cart_id),
-			'amount'	=> (int)$price,
-			'cart'		=> array(
-				'productInformation'	=> trim($cart_desc)));
+			'merchantid' => (int)$mid,
+			'licenceKey' => $key,
+			'identifier' => trim($cart_id),
+            'amount' => (int)$price,
+            'cart' => array(
+            'productInformation' => trim($cart_desc))
+        );
 	}
 
 	public function setRequestClient($client_name,$client_version) {
@@ -113,12 +114,12 @@ class CityPay_PayLink {
 	public function setRequestConfig($testmode, $postback_url, $return_success_url, $return_failure_url) {
 		$this->request_config = array(
 			//'test'		=> 'simulator',
-			'test'		=> $testmode?'true':'false',
-			'config'	=> array(
+			'test' => $testmode?'true':'false',
+			'config' => array(
                                 /* Disabled for use with CityPay PayForm Wordpress Plugin */
 				/*'lockParams'	=> array('cardholder'),*/
-				'redirect_success'=> $return_success_url,
-				'redirect_failure'=> $return_failure_url)
+			'redirect_success' => $return_success_url,
+			'redirect_failure' => $return_failure_url)
 		);
 		if (empty($postback_url)) {
 			$this->request_config['config']['redirect_params'] = true;
@@ -129,12 +130,32 @@ class CityPay_PayLink {
 			$this->request_config['config']['postback_policy'] = 'sync';
 		}
 	}
+    
+    public function setRequestConfigOption($option) {
+        if (!is_array($this->request_config['config']['options'])) {
+            $this->request_config['config']['options'] = array();
+        }
+        
+        array_push($this->request_config['config']['options'], $option);
+    }
+    
+    public function setRequestMerchant($email_address) {
+        $this->request_merchant = array(
+            'email' => $email_address
+        );
+    }
 
 	public function getJSON($testmode, $postback_url, $return_success_url, $return_failure_url) {
-                // note, call to this function at line 120 results in PHP warnings for lack of
-                // specified parameters; yet getJSON simply collates information that forms part of
-                // the current instance of CityPay_Paylink
-		$params=array_merge($this->request_cart,$this->request_client,$this->request_addr,$this->request_config);
+        // note, call to this function at line 120 results in PHP warnings for lack of
+        // specified parameters; yet getJSON simply collates information that forms part of
+        // the current instance of CityPay_Paylink  
+		$params=array_merge(
+            $this->request_merchant,
+            $this->request_cart,
+            $this->request_client,
+            $this->request_addr,
+            $this->request_config
+        );
 		return json_encode($params);
 	}
 
@@ -152,48 +173,48 @@ class CityPay_PayLink {
 			}
 		}
 		// Add the relevant data options
-                $curl_opts[CURLOPT_POST] = true;
+        $curl_opts[CURLOPT_POST] = true;
 		$curl_opts[CURLOPT_POSTFIELDS] = $json;
 		$curl_opts[CURLOPT_RETURNTRANSFER] = true;
 		$curl_opts[CURLOPT_HTTPHEADER] = array(
 			'Accept: application/json',
 			'Content-Type: application/json;charset=UTF-8',
 			'Content-Length: ' . strlen($json));
-                $curl_opts[CURLOPT_VERBOSE] = true;
-                $curl_stderr = fopen('php://temp', 'w+');
-                $curl_opts[CURLOPT_STDERR] = $curl_stderr;
+        $curl_opts[CURLOPT_VERBOSE] = true;
+        $curl_stderr = fopen('php://temp', 'w+');
+        $curl_opts[CURLOPT_STDERR] = $curl_stderr;
 		$ch = curl_init('https://secure.citypay.com/paylink3/create');
 		curl_setopt_array($ch, $curl_opts);
-                $response = curl_exec($ch);
-                if (empty($response))
-                {
-                    rewind($curl_stderr);
-                    $req_stderr = stream_get_contents($curl_stderr, 4096);
-                    fclose($curl_stderr);
-                    $req_info = curl_getinfo($ch);
-                    $req_errno = curl_errno($ch);
-                    $req_error = curl_error($ch);
-                    curl_close($ch);
-                    $this->debugLog("Request information - ".print_r($req_info, true));
-                    $this->debugLog("Request errno - ".print_r($req_errno, true));
-                    $this->debugLog("Request error - ".print_r($req_error, true));
-                    $this->debugLog("cURL trace - ".print_r($req_stderr, true));
-                    $this->debugLog("Response - ".print_r($response, true));
-                    throw new Exception('Error generating PayLink token');
-                }
-                curl_close($ch);
-                $results = json_decode($response,true);
-                if ($results['result']!=1) {
-                        $this->debugLog($response);
-                        $this->debugLog(print_r($results,true));
-                        throw new Exception('Invalid response from PayLink');
-                }
-                $paylink_url=$results['url'];
-                if (empty($paylink_url)) {
-                        $this->debugLog(print_r($results,true));
-                        throw new Exception('No URL obtained from PayLink');
-                }
-                return $paylink_url;
+        $response = curl_exec($ch);
+        if (empty($response))
+        {
+            rewind($curl_stderr);
+            $req_stderr = stream_get_contents($curl_stderr, 4096);
+            fclose($curl_stderr);
+            $req_info = curl_getinfo($ch);
+            $req_errno = curl_errno($ch);
+            $req_error = curl_error($ch);
+            curl_close($ch);
+            $this->debugLog("Request information - ".print_r($req_info, true));
+            $this->debugLog("Request errno - ".print_r($req_errno, true));
+            $this->debugLog("Request error - ".print_r($req_error, true));
+            $this->debugLog("cURL trace - ".print_r($req_stderr, true));
+            $this->debugLog("Response - ".print_r($response, true));
+            throw new Exception('Error generating PayLink token');
+        }
+        curl_close($ch);
+        $results = json_decode($response,true);
+        if ($results['result']!=1) {
+                $this->debugLog($response);
+                $this->debugLog(print_r($results,true));
+                throw new Exception('Invalid response from PayLink');
+        }
+        $paylink_url=$results['url'];
+        if (empty($paylink_url)) {
+                $this->debugLog(print_r($results,true));
+                throw new Exception('No URL obtained from PayLink');
+        }
+        return $paylink_url;
 	}
 
 	public function validPostbackIP($remote_addr,$allowed_ip) {
@@ -237,9 +258,9 @@ class CityPay_PayLink {
 
 	public function validatePostbackData($postback_data,$key) {
 		$hash_src = $postback_data['authcode'].
-			$postback_data['amount'].$postback_data['errorcode'].
-			$postback_data['merchantid'].$postback_data['transno'].
-			$postback_data['identifier'].$key;
+        $postback_data['amount'].$postback_data['errorcode'].
+        $postback_data['merchantid'].$postback_data['transno'].
+        $postback_data['identifier'].$key;
 		// Check both the sha1 and sha256 hash values to ensure that results have not
 		// been tampered with
 		$check=base64_encode(sha1($hash_src,true));

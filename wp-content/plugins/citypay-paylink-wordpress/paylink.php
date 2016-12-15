@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.0.6.RELEASE
+ * Version: 1.0.7
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -22,6 +22,8 @@ if (file_exists('customer/overrides.php')) {
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
+define('CP_PAYLINK_MERCHANT_EMAIL_ADDRESS', 'cp_paylink_merchant_email_address');
+define('CP_PAYLINK_ENABLE_MERCHANT_EMAIL', 'cp_paylink_enable_merchant_email');
 define('CP_PAYLINK_TEST_MODE', 'cp_paylink_test_mode');
 define('CP_PAYLINK_DEBUG_MODE', 'cp_paylink_debug_mode');
     
@@ -831,23 +833,6 @@ function cp_paylink_action_pay() {
     $accept_terms_and_conditions_in = filter_input(INPUT_POST, 'accept-terms-and-conditions', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
     $f5_valid = (!is_null($f5)) && $f5->parse($accept_terms_and_conditions_in, $accept_terms_and_conditions_out);
     
-        /*echo '<pre>';
-        echo 'identifier_in = "'.$identifier_in.'"; ';
-        echo 'identifier_out = "'.$identifier_out.'"; ';
-        echo 'email_in = "'.$email_in.'"; ';
-        echo 'email_out = "'.$email_out.'"; ';
-        echo 'name_in = "'.$name_in.'"; ';
-        echo 'name_out = "'.$name_out.'"; ';
-        echo 'amount_in = "'.$amount_in.'";';
-        echo 'amount_out = "'.$amount_out.'";';
-        var_dump($f1_valid);
-        var_dump($f2_valid);
-        var_dump($f3_valid);
-        var_dump($f4_valid);
-        var_dump($f4);
-        echo '</pre>';
-        //exit;*/
-    
     if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid) { 
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
     }
@@ -863,7 +848,7 @@ function cp_paylink_action_pay() {
     $failure_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', $current_url);
     
     $logger = new CityPay_Logger(plugin_dir_path(__FILE__));
-    $paylink = new CityPay_PayLink($logger);
+    $paylink = new CityPay_PayLink($logger);   
     $paylink->setRequestCart(
             $merchant_id,
             $licence_key,
@@ -887,6 +872,15 @@ function cp_paylink_action_pay() {
             $success_url,
             $failure_url
         );
+       
+    $merchant_email = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
+    if (!empty($merchant_email)) {
+        $paylink->setRequestMerchantEmail($merchant_email);
+        $enable_merchant_email = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL);
+        if (!$enable_merchant_email) {
+            $paylink->setRequestConfigOption('BYPASS_MERCHANT_EMAIL');
+        }
+    }
     
     $fields = &cp_paylink_config_stack()->getFields();
     foreach ($fields as $field) {
@@ -1069,6 +1063,8 @@ function cp_paylink_settings_page() {
     
     $merchant_id_option_value = get_option(CP_PAYLINK_MERCHANT_ID, '');
     $licence_key_option_value = get_option(CP_PAYLINK_LICENCE_KEY, '');
+    $merchant_email_address_option_value = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS, '');
+    $enable_merchant_email_option = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
     $test_mode_option_value = get_option(CP_PAYLINK_TEST_MODE, true);
     $debug_mode_option_value = get_option(CP_PAYLINK_DEBUG_MODE, true);
     
@@ -1082,6 +1078,18 @@ function cp_paylink_settings_page() {
         
         $licence_key_option_value = filter_input(INPUT_POST, CP_PAYLINK_LICENCE_KEY, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
         update_option(CP_PAYLINK_LICENCE_KEY, $licence_key_option_value);
+        
+        //
+        // TODO: validate the email address
+        //
+        $merchant_email_address_option_value = filter_input(INPUT_POST, CP_PAYLINK_MERCHANT_EMAIL_ADDRESS, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
+        update_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS, $merchant_email_address_option_value);
+            
+        //
+        // TODO: validate the email address and adjust / error if not.
+        //
+        $enable_merchant_email_option_value = (filter_input(INPUT_POST, CP_PAYLINK_ENABLE_MERCHANT_EMAIL, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR) == 'on');
+        update_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, $enable_merchant_email_option_value);
         
         $test_mode_option_value = (filter_input(INPUT_POST, CP_PAYLINK_TEST_MODE, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR) == 'on');  
         update_option(CP_PAYLINK_TEST_MODE, $test_mode_option_value);
@@ -1108,6 +1116,15 @@ function cp_paylink_settings_page() {
         <th class="titledesc"><label><?php _e("Licence key", 'licence-key'); ?></label></th>
         <td class="forminp"><input type="text" name="<?php echo CP_PAYLINK_LICENCE_KEY; ?>" value="<?php echo $licence_key_option_value; ?>" size="16"></input></td>
     </tr>
+    <tr>
+        <th class="titledesc"><label><?php _e("Merchant email address", 'merchant-email-address'); ?></label></th>
+        <td class="forminp"><input type="text" name="<?php echo CP_PAYLINK_MERCHANT_EMAIL_ADDRESS; ?>" value="<?php echo $merchant_email_address_option_value; ?>" size="60"></input></td>
+    </tr>
+    <tr>
+        <th class="titledesc"><label><?php _e("Enable merchant email", 'enable-merchant-email'); ?></label></th>
+        <td class="forminp"><input type="checkbox" name="<?php echo CP_PAYLINK_ENABLE_MERCHANT_EMAIL; ?>" <?php echo ($enable_merchant_email_option_value?'checked':''); ?>></input>
+    </tr>
+    <tr>
     <tr>
         <th class="titledesc"><label><?php _e("Test Mode", 'test-mode'); ?></label></th>
         <td class="forminp">
