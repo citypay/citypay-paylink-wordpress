@@ -685,7 +685,7 @@ function cp_paylink_payform_display_checkbox_field_default($field) {
         .'" type="checkbox"'
         .($field->value?' checked="on"':'')
         .' />';
-            
+    $c = null;         
     $c .= $field->getContent();
     if (!empty($c)) {
         $s .= $c;
@@ -705,7 +705,7 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
     // if a configuration has been specified
     $current_url = get_permalink();        
     $s = trim($content)
-       .'<form role="form" id="billPaymentForm" class="form-horizontal" method="POST" action="'
+       .'<form role="form" id="billPaymentForm" class="form-horizontal uk-form" method="POST" action="'
        .add_query_arg('cp_paylink', 'pay', $current_url)
        .'"><input type="hidden" name="cp_paylink_pay" value="Y">';
 
@@ -715,7 +715,7 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
     // Sort the fieldlist appearing in the PayForm configuration according to
     // the order attribute provided.
     //
-    usort($config, cp_paylink_payform_field_config_sort);
+    usort($config, 'cp_paylink_payform_field_config_sort');
 
     foreach ($config as $field) {
         if ($field instanceof cp_paylink_text_field) {
@@ -733,7 +733,7 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
         }
     }
 
-    $s .= '<button type="submit">'
+    $s .= '<button type="submit" class="uk-button uk-button-primary uk-button-large">'
        .$attrs['submit']
        . '</button></form>';
 
@@ -742,7 +742,7 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
 
 function cp_paylink_payform_display($attrs, $content = null) {
     $a = shortcode_atts(
-            array('submit' => __('Pay', cp_paylink_pay)),
+            array('submit' => __('Pay', 'cp_paylink_pay')),
             $attrs
         );
     
