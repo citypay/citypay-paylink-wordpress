@@ -116,8 +116,8 @@ class CityPay_PayLink {
 			//'test'		=> 'simulator',
 			'test' => $testmode?'true':'false',
 			'config' => array(
-                                /* Disabled for use with CityPay PayForm Wordpress Plugin */
-				/*'lockParams'	=> array('cardholder'),*/
+            /* Disabled for use with CityPay PayForm Wordpress Plugin */
+            /*'lockParams'	=> array('cardholder'),*/
 			'redirect_success' => $return_success_url,
 			'redirect_failure' => $return_failure_url)
 		);

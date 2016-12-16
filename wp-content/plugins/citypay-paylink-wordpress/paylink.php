@@ -876,7 +876,7 @@ function cp_paylink_action_pay() {
     $merchant_email = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
     if (!empty($merchant_email)) {
         $paylink->setRequestMerchantEmail($merchant_email);
-        $enable_merchant_email = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL);
+        $enable_merchant_email = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
         if (!$enable_merchant_email) {
             $paylink->setRequestConfigOption('BYPASS_MERCHANT_EMAIL');
         }
@@ -1064,7 +1064,7 @@ function cp_paylink_settings_page() {
     $merchant_id_option_value = get_option(CP_PAYLINK_MERCHANT_ID, '');
     $licence_key_option_value = get_option(CP_PAYLINK_LICENCE_KEY, '');
     $merchant_email_address_option_value = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS, '');
-    $enable_merchant_email_option = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
+    $enable_merchant_email_option_value = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
     $test_mode_option_value = get_option(CP_PAYLINK_TEST_MODE, true);
     $debug_mode_option_value = get_option(CP_PAYLINK_DEBUG_MODE, true);
     
@@ -1124,7 +1124,6 @@ function cp_paylink_settings_page() {
         <th class="titledesc"><label><?php _e("Enable merchant email", 'enable-merchant-email'); ?></label></th>
         <td class="forminp"><input type="checkbox" name="<?php echo CP_PAYLINK_ENABLE_MERCHANT_EMAIL; ?>" <?php echo ($enable_merchant_email_option_value?'checked':''); ?>></input>
     </tr>
-    <tr>
     <tr>
         <th class="titledesc"><label><?php _e("Test Mode", 'test-mode'); ?></label></th>
         <td class="forminp">
