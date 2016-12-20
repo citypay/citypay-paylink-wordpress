@@ -25,8 +25,8 @@ define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
 define('CP_PAYLINK_MERCHANT_EMAIL_ADDRESS', 'cp_paylink_merchant_email_address');
 define('CP_PAYLINK_ENABLE_MERCHANT_EMAIL', 'cp_paylink_enable_merchant_email');
-define('CP_PAYLINK_ENABLE_TEST_MODE', 'cp_paylink_test_mode');
-define('CP_PAYLINK_ENABLE_DEBUG_MODE', 'cp_paylink_debug_mode');
+define('CP_PAYLINK_ENABLE_TEST_MODE', 'cp_paylink_enable_test_mode');
+define('CP_PAYLINK_ENABLE_DEBUG_MODE', 'cp_paylink_enable_debug_mode');
     
 define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
 define('CP_PAYLINK_IDENTIFIER_REGEX', '/[A-Za-z0-9]{5,}/');
@@ -1047,7 +1047,7 @@ function cp_paylink_administration() {
     );
 }
 
-function cp_paylink_setting_merchant_id() {
+function cp_paylink_settings_merchant_id() {
     $option = get_option(CP_PAYLINK_MERCHANT_ID);
     echo "<input type='text' id='"
         . CP_PAYLINK_MERCHANT_ID
@@ -1056,7 +1056,7 @@ function cp_paylink_setting_merchant_id() {
         . "' value='${option}' size='16'></input>";
 }
 
-function cp_paylink_setting_licence_key() {
+function cp_paylink_settings_licence_key() {
     $option = get_option(CP_PAYLINK_LICENCE_KEY);
     echo "<input type='text' id='"
         . CP_PAYLINK_LICENCE_KEY
@@ -1065,7 +1065,7 @@ function cp_paylink_setting_licence_key() {
         . "' value='${option}' size='16'></input>";
 }
 
-function cp_paylink_setting_merchant_email_address() {
+function cp_paylink_settings_merchant_email_address() {
     $option = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
     echo "<input type='text' id='"
         . CP_PAYLINK_MERCHANT_EMAIL_ADDRESS
@@ -1074,8 +1074,8 @@ function cp_paylink_setting_merchant_email_address() {
         . "' value='${option}' size='60'></input>";
 }
 
-function cp_paylink_setting_enable_merchant_email() {
-    $option = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL);
+function cp_paylink_settings_enable_merchant_email() {
+    $option = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
     echo "<input type='checkbox' id='"
         . CP_PAYLINK_ENABLE_MERCHANT_EMAIL
         . "' name='"
@@ -1085,21 +1085,22 @@ function cp_paylink_setting_enable_merchant_email() {
         . '></input>';
 }
 
-function cp_paylink_setting_enable_test_mode() {
-    $option = get_option(CP_PAYLINK_ENABLE_TEST_MODE);
+function cp_paylink_settings_enable_test_mode() {
+    $option = get_option(CP_PAYLINK_ENABLE_TEST_MODE, true);
     echo "<input type='checkbox' id='"
         . CP_PAYLINK_ENABLE_TEST_MODE
         . "' name='"
         . CP_PAYLINK_ENABLE_TEST_MODE
-        . "' ($option?' checked':'')"
+        . "' "
+        . ($option?' checked':'')
         . "></input> Generate transactions using test mode"
         . "<p class='description'>Use this whilst testing your integration. "
         . "You must disable test mode when you are ready to take live "
         . "transactions.</p>";
 }
 
-function cp_paylink_setting_enable_debug_mode() {
-    $option = get_option(CP_PAYLINK_ENABLE_DEBUG_MODE);
+function cp_paylink_settings_enable_debug_mode() {
+    $option = get_option(CP_PAYLINK_ENABLE_DEBUG_MODE, true);
     echo "<input type='checkbox' id='"
         . CP_PAYLINK_ENABLE_DEBUG_MODE
         . "' name='"
@@ -1114,6 +1115,7 @@ function cp_paylink_setting_enable_debug_mode() {
 
 function cp_paylink_settings_validate_merchant_id($input) {
     if (!CityPay_Validation::validateMerchantId($input)) {
+        $output = get_option(CP_PAYLINK_MERCHANT_ID);
         add_settings_error(
             'merchant-id',
             'invalid-merchant-id',
@@ -1121,12 +1123,15 @@ function cp_paylink_settings_validate_merchant_id($input) {
             'error'
         );
     } else {
-        return apply_filters('cp_paylink_settings_validate_merchant_id', $input, $input);
+        $output = $input;
     }
+    
+    return apply_filters('cp_paylink_settings_validate_merchant_id', $output, $output);
 }
 
 function cp_paylink_settings_validate_licence_key($input) {
     if (!CityPay_Validation::validateLicenceKey($input)) {
+        $output = get_option(CP_PAYLINK_LICENCE_KEY);
         add_settings_error(
             'licence-key',
             'invalid-licence-key',
@@ -1134,12 +1139,15 @@ function cp_paylink_settings_validate_licence_key($input) {
             'error'
         );
     } else {
-        return apply_filters('cp_paylink_settings_validate_licence_key', $input, $input);
+        $output = $input;
     }
+    
+    return apply_filters('cp_paylink_settings_validate_licence_key', $output, $output);
 }
 
 function cp_paylink_settings_validate_merchant_email_address($input) {
-    if (!CityPay_Validation::validateEmailAddress($input)) {
+    if (!CityPay_Validation::validateEmailAddress($input) && !empty($input)) {
+        $output = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
         add_settings_error(
             'merchant-email-address',
             'invalid-email-address',
@@ -1147,12 +1155,15 @@ function cp_paylink_settings_validate_merchant_email_address($input) {
             'error'
         );
     } else {
-        return apply_filters('cp_paylink_settings_validate_merchant_email_address', $input, $input);
+        $output = $input;
     }
+    
+    return apply_filters('cp_paylink_settings_validate_merchant_email_address', $output, $output);
 }
 
 function cp_paylink_settings_validate_enable_merchant_email($input) {
     if (!CityPay_Validation::validateCheckboxValue($input)) {
+        $output = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL);
         add_settings_error(
             'enable-merchant-email',
             'invalid-checkbox-value',
@@ -1160,12 +1171,15 @@ function cp_paylink_settings_validate_enable_merchant_email($input) {
             'error'
         );
     } else {
-        return apply_filters('cp_paylink_settings_validate_enable_merchant_email', $input, $input);
+        $output = $input;
     }
+    
+    return apply_filters('cp_paylink_settings_validate_enable_merchant_email', $output, $output);
 }
 
 function cp_paylink_settings_validate_enable_test_mode($input) {
     if (!CityPay_Validation::validateCheckboxValue($input)) {
+        $output = get_option(CP_PAYLINK_ENABLE_TEST_MODE);
         add_settings_error(
             'enable-test-mode',
             'invalid-checkbox-value',
@@ -1173,12 +1187,15 @@ function cp_paylink_settings_validate_enable_test_mode($input) {
             'error'
         );
     } else {
-        return apply_filters('cp_paylink_settings_validate_enable_test_mode', $input, $input);
+        $output = $input;
     }
+    
+    return apply_filters('cp_paylink_settings_validate_enable_test_mode', $output, $output);
 }
 
 function cp_paylink_settings_validate_enable_debug_mode($input) {
     if (!CityPay_Validation::validateCheckboxValue($input)) {
+        $output = get_option(CP_PAYLINK_ENABLE_DEBUG_MODE);
         add_settings_error(
             'enable-debug-mode',
             'invalid-checkbox-value',
@@ -1186,8 +1203,10 @@ function cp_paylink_settings_validate_enable_debug_mode($input) {
             'error'
         );
     } else {
-        return apply_filters('cp_paylink_settings_validate_enable_debug_mode', $input, $input);
+        $output = $input;
     }
+    
+    return apply_filters('cp_paylink_settings_validate_enable_debug_mode', $output, $output);
 }
 
 function cp_paylink_settings_main_section_text($input) {
@@ -1206,7 +1225,7 @@ function cp_paylink_admin_init() {
     add_settings_field(
         CP_PAYLINK_MERCHANT_ID,
         'Merchant identifier',
-        'cp_paylink_setting_merchant_id',
+        'cp_paylink_settings_merchant_id',
         'cp-paylink-settings',
         'main_section',
         array(
@@ -1217,7 +1236,7 @@ function cp_paylink_admin_init() {
     add_settings_field(
         'licence-key',
         'Licence Key',
-        'cp_paylink_setting_licence_key',
+        'cp_paylink_settings_licence_key',
         'cp-paylink-settings',
         'main_section',
         array(
@@ -1229,7 +1248,7 @@ function cp_paylink_admin_init() {
     add_settings_field(
         'merchant-email-address',
         'Email address',
-        'cp_paylink_setting_merchant_email_address',
+        'cp_paylink_settings_merchant_email_address',
         'cp-paylink-settings',
         'main_section',
         array(
@@ -1240,7 +1259,7 @@ function cp_paylink_admin_init() {
     add_settings_field(
         'enable-merchant-email',
         'Enable merchant email',
-        'cp_paylink_setting_enable_merchant_email',
+        'cp_paylink_settings_enable_merchant_email',
         'cp-paylink-settings',
         'main_section',
         array(
@@ -1251,7 +1270,7 @@ function cp_paylink_admin_init() {
     add_settings_field(
         'enable-test-mode',
         'Enable test mode',
-        'cp_paylink_setting_enable_test_mode',
+        'cp_paylink_settings_enable_test_mode',
         'cp-paylink-settings',
         'main_section',
         array(
@@ -1262,7 +1281,7 @@ function cp_paylink_admin_init() {
     add_settings_field(
         'enable-debug-mode',
         'Enable debug mode',
-        'cp_paylink_setting_enable_debug_mode',
+        'cp_paylink_settings_enable_debug_mode',
         'cp-paylink-settings',
         'main_section',
         array(
@@ -1284,9 +1303,9 @@ function cp_paylink_settings_page() {
     }
  
     echo '<div class=""><h1>'
-        .__( 'CityPay PayLink WP', 'cp-paylink-wp')
+        .__('CityPay PayLink for WordPress', 'cp-paylink-wp')
         .'</h1>';
-        
+    
     settings_errors();
     
     echo '<form method="post" action="options.php">';
