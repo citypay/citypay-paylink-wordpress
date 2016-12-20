@@ -11,4 +11,19 @@ class CityPay_Validation {
     public static function validateEmailAddress($email_address) {
         return preg_match(self::CP_PAYLINK_EMAIL_REGEX, $email_address);
     }
+    
+    public static function validateMerchantId($merchant_id) {
+        // TODO: implement proper validation test
+        return 1;
+    }
+    
+    public static function validateLicenceKey($licence_key) {
+        // TODO: implement proper validation test
+        return 1;
+    }
+    
+    public static function validateCheckboxValue($value) {
+        // TODO: implement proper validation test
+        return 1;
+    }
 }
