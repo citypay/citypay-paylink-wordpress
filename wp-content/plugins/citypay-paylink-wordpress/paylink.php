@@ -1039,8 +1039,8 @@ function cp_paylink_settings_link($links) {
 
 function cp_paylink_administration() {
     add_options_page( 
-        __('CityPay PayLink WP', 'cp-paylink-wp'),
-        __('CityPay PayLink WP', 'cp-paylink-wp'),
+        __('CityPay PayLink for WordPress', 'cp-paylink-wp'),
+        __('CityPay PayLink for WordPress', 'cp-paylink-wp'),
         'manage_options',
         'cp-paylink-settings',
         'cp_paylink_settings_page'
@@ -1133,7 +1133,7 @@ function cp_paylink_settings_validate_licence_key($input) {
     if (!CityPay_Validation::validateLicenceKey($input)) {
         $output = get_option(CP_PAYLINK_LICENCE_KEY);
         add_settings_error(
-            'licence-key',
+            'cp-paylink-settings',
             'invalid-licence-key',
             __('Invalid licence key provided.', 'invalid-licence-key'),
             'error'
@@ -1149,7 +1149,7 @@ function cp_paylink_settings_validate_merchant_email_address($input) {
     if (!CityPay_Validation::validateEmailAddress($input) && !empty($input)) {
         $output = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
         add_settings_error(
-            'merchant-email-address',
+            'cp-paylink-settings',
             'invalid-email-address',
             __('Invalid email address provided.', 'invalid-email-address'),
             'error'
@@ -1165,8 +1165,8 @@ function cp_paylink_settings_validate_enable_merchant_email($input) {
     if (!CityPay_Validation::validateCheckboxValue($input)) {
         $output = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL);
         add_settings_error(
-            'enable-merchant-email',
-            'invalid-checkbox-value',
+            'cp-paylink-settings',
+            'invalid-enable-merchant-email-checkbox-value',
             __('Invalid checkbox value for enable merchant email setting.', 'invalid-checkbox-value'),
             'error'
         );
@@ -1181,8 +1181,8 @@ function cp_paylink_settings_validate_enable_test_mode($input) {
     if (!CityPay_Validation::validateCheckboxValue($input)) {
         $output = get_option(CP_PAYLINK_ENABLE_TEST_MODE);
         add_settings_error(
-            'enable-test-mode',
-            'invalid-checkbox-value',
+            'cp-paylink-settings',
+            'invalid-enable-test-mode-checkbox-value',
             __('Invalid checkbox value for enable test mode setting.', 'invalid-checkbox-value'),
             'error'
         );
@@ -1197,8 +1197,8 @@ function cp_paylink_settings_validate_enable_debug_mode($input) {
     if (!CityPay_Validation::validateCheckboxValue($input)) {
         $output = get_option(CP_PAYLINK_ENABLE_DEBUG_MODE);
         add_settings_error(
-            'enable-debug-mode',
-            'invalid-checkbox-value',
+            'cp-paylink-settings',
+            'invalid-enable-debug-mode-checkbox-value',
             __('Invalid checkbox value for enable debug mode setting.', 'invalid-checkbox-value'),
             'error'
         );
@@ -1209,9 +1209,7 @@ function cp_paylink_settings_validate_enable_debug_mode($input) {
     return apply_filters('cp_paylink_settings_validate_enable_debug_mode', $output, $output);
 }
 
-function cp_paylink_settings_main_section_text($input) {
-    echo "Main section text";
-}
+function cp_paylink_settings_main_section_text($input) { }
 
 function cp_paylink_admin_init() {
     
@@ -1302,13 +1300,9 @@ function cp_paylink_settings_page() {
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
  
-    echo '<div class=""><h1>'
+    echo '<div class="wrap"><h1>'
         .__('CityPay PayLink for WordPress', 'cp-paylink-wp')
-        .'</h1>';
-    
-    settings_errors();
-    
-    echo '<form method="post" action="options.php">';
+        .'</h1><form method="post" action="options.php">';
     
     settings_fields('cp-paylink-settings');
     do_settings_sections('cp-paylink-settings');
