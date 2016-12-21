@@ -826,6 +826,8 @@ function cp_paylink_action_pay() {
             filter_input(INPUT_POST, $key, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR),
             $scratch
         );
+        
+        $field->value = $scratch;
     }
     
     $f1 = $fields['identifier'];
