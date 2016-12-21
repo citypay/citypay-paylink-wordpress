@@ -20,6 +20,7 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
+define('CP_PAYLINK_VERSION', '1.0.7');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
@@ -27,6 +28,8 @@ define('CP_PAYLINK_MERCHANT_EMAIL_ADDRESS', 'cp_paylink_merchant_email_address')
 define('CP_PAYLINK_ENABLE_MERCHANT_EMAIL', 'cp_paylink_enable_merchant_email');
 define('CP_PAYLINK_ENABLE_TEST_MODE', 'cp_paylink_enable_test_mode');
 define('CP_PAYLINK_ENABLE_DEBUG_MODE', 'cp_paylink_enable_debug_mode');
+
+define('CP_PAYLINK_OPT_VERSION', 'cp_paylink_version');
     
 define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
 define('CP_PAYLINK_IDENTIFIER_REGEX', '/[A-Za-z0-9]{5,}/');
@@ -88,6 +91,30 @@ $cp_paylink_default_error_messages = array(
 
 define('CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR', 0x05);
 define('CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR', 0x06);
+
+function cp_paylink_install() {
+    
+    $current_version = get_option(CP_PAYLINK_OPT_VERSION);
+    switch ($current_version) {
+        case "1.0.7":
+            break;
+       
+        default:
+            $test_mode = get_option('cp_paylink_test_mode');
+            if (!is_null($test_mode)) {
+                add_option(CP_PAYLINK_ENABLE_TEST_MODE, $test_mode);
+                delete_option('cp_paylink_test_mode');
+            }
+            
+            $debug_mode = get_option('cp_paylink_debug_mode');
+            if (!is_null($debug_mode)) {
+                add_option(CP_PAYLINK_ENABLE_DEBUG_MODE, $debug_mode);
+                delete_option('cp_paylink_debug_mode');
+            }
+    }
+    
+    update_option(CP_PAYLINK_OPT_VERSION, CP_PAYLINK_VERSION);
+}
 
 function cp_paylink_config_stack() {
     static $cp_paylink_config_stack = NULL;
@@ -846,22 +873,22 @@ function cp_paylink_action_pay() {
     $identifier = $f1->value;
     $amount = $f4->value;
     $paylink->setRequestCart(
-            $merchant_id,
-            $licence_key,
-            $identifier,
-            $amount,
-            ''
-        );
+        $merchant_id,
+        $licence_key,
+        $identifier,
+        $amount,
+        ''
+    );
        
     $name = $f3->value;
     $email = $f2->value;
     $paylink->setRequestAddress(
-            $name['first-name'], 
-            $name['last-name'],
-            '', '', '', '', '', '',
-            $email,
-            ''
-        );
+        $name['first-name'], 
+        $name['last-name'],
+        '', '', '', '', '', '',
+        $email,
+        ''
+    );
     
     $plugin_data = get_file_data(__FILE__, array('Version'));
     
@@ -869,7 +896,7 @@ function cp_paylink_action_pay() {
             'Wordpress',
             get_bloginfo('version', 'raw'),
             'PayLink-PayForm',
-            $plugin_data['Version']
+            CP_PAYLINK_VERSION
         );
     
     $paylink->setRequestConfig(
@@ -1337,3 +1364,5 @@ add_action('init', 'cp_paylink_init');
 add_action('admin_init', 'cp_paylink_admin_init');
 add_action('wp_loaded', 'cp_paylink_wp_loaded');
 add_filter('no_texturize_shortcodes', 'cp_paylink_exempt_shortcodes_from_texturize');
+
+register_activation_hook(__FILE__, 'cp_paylink_install');
