@@ -799,8 +799,6 @@ function cp_paylink_action_pay() {
             filter_input(INPUT_POST, $key, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR),
             $scratch
         );
-        
-        error_log($key.' - '.$scratch);
     }
     
     $f1 = $fields['identifier'];
@@ -827,10 +825,6 @@ function cp_paylink_action_pay() {
        
     $f5 = $fields['accept-terms-and-conditions'];
     $f5_valid = (!is_null($f5) && ($f5->value == '1'));
-    
-    error_log(
-        "f1($f1_valid), f2($f2_valid), f3($f3_valid), f4($f4_valid), f5($f5_valid)"
-    );
     
     if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid) { 
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
