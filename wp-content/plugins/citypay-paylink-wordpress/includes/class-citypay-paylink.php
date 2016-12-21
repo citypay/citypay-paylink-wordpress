@@ -106,9 +106,12 @@ class CityPay_PayLink {
         );
 	}
 
-	public function setRequestClient($client_name,$client_version) {
+	public function setRequestClient($client_name, $client_version, $plugin_name, $plugin_version) {
 		$this->request_client = array(
-			'clientVersion'	=> trim($client_name).' '.trim($client_version));
+			'clientVersion'	=> 
+                trim($client_name).' '.trim($client_version)
+                    .'/'.trim($plugin_name).' '.trim($plugin_version)
+        );
 	}
 
 	public function setRequestConfig($testmode, $postback_url, $return_success_url, $return_failure_url) {
@@ -145,7 +148,7 @@ class CityPay_PayLink {
         );
     }
 
-	public function getJSON($testmode, $postback_url, $return_success_url, $return_failure_url) {
+	public function getJSON() {
         // note, call to this function at line 120 results in PHP warnings for lack of
         // specified parameters; yet getJSON simply collates information that forms part of
         // the current instance of CityPay_Paylink  

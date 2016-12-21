@@ -359,6 +359,7 @@ class cp_paylink_customer_name_field extends cp_paylink_text_field {
                             'middle-initial' => $matches[3],
                             'last-name' => $matches[4]
                         );
+                    $this->value = $value_out;
                 } else {
                     $this->error = CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID;
                 }
@@ -777,6 +778,7 @@ function cp_paylink_action_pay() {
 
     add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_payform_checkbox_field');
+    add_shortcode('citypay-payform-text-field', 'cp_paylink_payform_text_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
@@ -790,19 +792,22 @@ function cp_paylink_action_pay() {
     $merchant_id = get_option(CP_PAYLINK_MERCHANT_ID);
     $licence_key = get_option(CP_PAYLINK_LICENCE_KEY);
     $test_mode = get_option(CP_PAYLINK_ENABLE_TEST_MODE);
-    $identifier_out = '';
-    $email_out = '';
-    $name_out = '';
-    $amount_out = 0;
-    $accept_terms_and_conditions_out = false;
     
-    $f1 = cp_paylink_config_stack()->get('identifier');
-    $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f1_valid = (!is_null($f1) && !is_null($identifier_in)) && $f1->parse($identifier_in, $identifier_out);
+    $fields = &cp_paylink_config_stack()->getFields();
+    foreach ($fields as $key => $field) {
+        $field->parse(
+            filter_input(INPUT_POST, $key, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR),
+            $scratch
+        );
+        
+        error_log($key.' - '.$scratch);
+    }
     
-    $f2 = cp_paylink_config_stack()->get('email');
-    $email_in = filter_input(INPUT_POST, 'email', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f2_valid = (!is_null($f2) && !is_null($email_in)) && $f2->parse($email_in, $email_out);
+    $f1 = $fields['identifier'];
+    $f1_valid = (!is_null($f1) && !is_null($f1->value));
+    
+    $f2 = $fields['email'];
+    $f2_valid = (!is_null($f2) && !is_null($f2->value));
     
     // Note: Name field had to be renamed to customer-name, as name field is
     // a Wordpress field that (presumably) relates to the name of either a link
@@ -814,17 +819,18 @@ function cp_paylink_action_pay() {
     // May require an element of white / black listing on field names to avoid
     // this situation, particularly if caused by end users' inadvertent use of
     // special keywords.
-    $f3 = cp_paylink_config_stack()->get('customer-name');
-    $name_in = filter_input(INPUT_POST, 'customer-name', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f3_valid = (!is_null($f3) && !is_null($name_in)) && $f3->parse($name_in, $name_out);
+    $f3 = $fields['customer-name'];
+    $f3_valid = (!is_null($f3) && !is_null($f3->value));
  
-    $f4 = cp_paylink_config_stack()->get('amount');
-    $amount_in = filter_input(INPUT_POST, 'amount', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f4_valid = (!is_null($f4) && !is_null($amount_in)) && $f4->parse($amount_in, $amount_out);
+    $f4 = $fields['amount'];
+    $f4_valid = (!is_null($f4) && !is_null($f4->value));
        
-    $f5 = cp_paylink_config_stack()->get('accept-terms-and-conditions');
-    $accept_terms_and_conditions_in = filter_input(INPUT_POST, 'accept-terms-and-conditions', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f5_valid = (!is_null($f5)) && $f5->parse($accept_terms_and_conditions_in, $accept_terms_and_conditions_out);
+    $f5 = $fields['accept-terms-and-conditions'];
+    $f5_valid = (!is_null($f5) && ($f5->value == '1'));
+    
+    error_log(
+        "f1($f1_valid), f2($f2_valid), f3($f3_valid), f4($f4_valid), f5($f5_valid)"
+    );
     
     if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid) { 
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
@@ -842,23 +848,36 @@ function cp_paylink_action_pay() {
     
     $logger = new CityPay_Logger(__FILE__);
     $paylink = new CityPay_PayLink($logger);   
+    
+    $identifier = $f1->value;
+    $amount = $f4->value;
     $paylink->setRequestCart(
             $merchant_id,
             $licence_key,
-            $identifier_out,
-            $amount_out,
+            $identifier,
+            $amount,
             ''
         );
        
+    $name = $f3->value;
+    $email = $f2->value;
     $paylink->setRequestAddress(
-            $name_out['first-name'], 
-            $name_out['last-name'],
+            $name['first-name'], 
+            $name['last-name'],
             '', '', '', '', '', '',
-            $email_out,
+            $email,
             ''
         );
     
-    $paylink->setRequestClient('Wordpress', get_bloginfo('version', 'raw'));
+    $plugin_data = get_file_data(__FILE__, array('Version'));
+    
+    $paylink->setRequestClient(
+            'Wordpress',
+            get_bloginfo('version', 'raw'),
+            'PayLink-PayForm',
+            $plugin_data['Version']
+        );
+    
     $paylink->setRequestConfig(
             $test_mode,
             $postback_url,
@@ -875,14 +894,13 @@ function cp_paylink_action_pay() {
         }
     }
     
-    $fields = &cp_paylink_config_stack()->getFields();
-    foreach ($fields as $field) {
+    foreach ($fields as $key => $field) {
         if ($field->passthrough === true) {
             $paylink->setCustomParameter(
-                    $field->name,
-                    $field->value,
-                    array('fieldType' => 'hidden')
-                );
+                $field->name,
+                $field->value,
+                array('fieldType' => 'hidden')
+            );
         }
     }
     
@@ -903,6 +921,7 @@ function cp_paylink_init() {
         add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
         add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
         add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_payform_checkbox_field');
+        add_shortcode('citypay-payform-text-field', 'cp_paylink_payform_text_field');
         add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
         add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform-on-page-load', 'cp_paylink_payform_on_page_load');
@@ -927,6 +946,7 @@ function cp_paylink_template_redirect_on_redirect_failure()
 
     add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_payform_checkbox_field');
+    add_shortcode('citypay-payform-text-field', 'cp_paylink_payform_text_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
@@ -952,6 +972,7 @@ function cp_paylink_template_redirect_on_redirect_success()
 
     add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_payform_checkbox_field');
+    add_shortcode('citypay-payform-text-field', 'cp_paylink_payform_text_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
@@ -984,10 +1005,12 @@ function cp_paylink_template_redirect_dispatcher() {
                 remove_shortcode('citypay-payform-field');
                 remove_shortcode('citypay-payform-checkbox-field');
                 remove_shortcode('citypay-payform-amount-field');
+                remove_shortcode('citypay-payform-text-field');
                 
                 add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
                 add_shortcode('citypay-payform-amount-field', 'cp_paylink_shortcode_sink');
                 add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_shortcode_sink');
+                add_shortcode('citypay-payform-text-field', 'cp_paylink_shortcode_sink');
                 add_shortcode('citypay-payform-field', 'cp_paylink_shortcode_sink');
                 
                 switch ($r)

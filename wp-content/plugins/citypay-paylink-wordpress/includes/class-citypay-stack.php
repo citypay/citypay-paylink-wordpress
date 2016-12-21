@@ -43,7 +43,7 @@ class cp_paylink_config_stack
         $config = &$this->peek();
         foreach ($config as $name => $value) {
             if ($value instanceof cp_paylink_field) {
-                $fields[] = $value;
+                $fields[$name] = $value;
             }
         }
         
