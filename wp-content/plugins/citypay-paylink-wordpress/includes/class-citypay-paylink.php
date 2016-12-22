@@ -72,9 +72,9 @@ class CityPay_PayLink {
         }
         $customParam['name'] = $name;
         $customParam['value'] = $value;
-        $customParams = &$this->request_config['customParams'];
+        $customParams = &$this->request_config['config']['customParams'];
         if (is_null($customParams)) {
-            $this->request_config['customParams'] = array($customParam);
+            $this->request_config['config']['customParams'] = array($customParam);
         } else {
             $customParams[] = $customParam;
         }
