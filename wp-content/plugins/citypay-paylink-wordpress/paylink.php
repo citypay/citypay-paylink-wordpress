@@ -243,21 +243,27 @@ class cp_paylink_field {
 
 class cp_paylink_text_field extends cp_paylink_field {
     public $pattern;
+    private $optional;
    
-    public function __construct($id, $name, $label, $placeholder = '', $pattern = '', $order = 99, $content = null, $passthrough = false) {
+    public function __construct($id, $name, $label, $placeholder = '', $pattern = '', $order = 99, $content = null, $passthrough = false, $optional = false) {
         parent::__construct($id, $name, $label, $placeholder, $order, $content, $passthrough);
         $this->pattern = $pattern;
+        $this->optional = $optional;
     }
     
     public function parse($value_in) {
-        $r = parent::parse($value_in);
-        if ($r) {
-            // See PPWD-3, and PPWD-13
-            if (strlen(parent::getValue()) == 0x00) {
-                $this->error = CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING;
-            }
+        parent::parse($value_in);
+        // See PPWD-3, and PPWD-13
+        if (!$this->optional && strlen(parent::getValue()) == 0x00) {
+            $this->error = CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING;
+            return false;
+        } else {
+            return true;
         }
-        return true;
+    }
+    
+    public function isOptional() {
+        return $this->optional;
     }
 }
 
@@ -332,7 +338,7 @@ class cp_paylink_amount_field extends cp_paylink_text_field {
     }
     
     public function __construct($id, $name, $label, $placeholder = '', $order = 99, $decimal_places = null, $minimum = null, $maximum = null) {
-        parent::__construct($id, $name, $label, $placeholder, null, $order, null, false);
+        parent::__construct($id, $name, $label, $placeholder, null, $order, null, false, false);
         if (is_null($decimal_places)) {
             $this->decimal_places = null;
         } else {
@@ -359,20 +365,13 @@ class cp_paylink_amount_field extends cp_paylink_text_field {
     }
      
     public function parse($value_in, $decimal_places = null) {
-        if (!parent::parse($value_in)) {
-            // this should relate to an upstream error - TODO: restructure
-            // parse functionality to return more finely grained errors
-            // at all levels (rather than boolean true / false values).
-            $this->error = CP_PAYLINK_NO_ERROR;
-            return false;
-        }
-       
+        if (!parent::parse($value_in)) { return false; }
         $_decimal_places = (!is_null($decimal_places)?$decimal_places:$this->decimal_places);
         if (self::_parse_amount(parent::getValue(), $this->amount, $_decimal_places) == CP_PAYLINK_NO_ERROR) {
-            if (!is_null($this->minimum) && $this->amount < $this->minimum) {
+            if (!empty($this->minimum) && $this->amount < $this->minimum) {
                 $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE;
                 return false;
-            } else if (!is_null($this->maximum) && $this->amount > $this->maximum) {
+            } else if (!empty($this->maximum) && $this->amount > $this->maximum) {
                 $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE;
                 return false;
             } else {
@@ -507,7 +506,8 @@ function cp_paylink_payform_field($attrs, $content = null) {
                     'pattern' => '',
                     'type' => 'text',
                     'id' => null,
-                    'passthrough' => false
+                    'passthrough' => false,
+                    'optional' => false
                 ),
             $attrs
         );
@@ -563,7 +563,8 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['pattern'],
                 $a['order'],
                 null,
-                (bool) $a['passthrough']
+                (bool) $a['passthrough'],
+                (bool) $a['optional']
             );
         break;
     }
@@ -837,10 +838,10 @@ function cp_paylink_action_pay() {
     }
     
     $f1 = $fields['identifier'];
-    $f1_valid = (!is_null($f1) && !is_null($f1->getValue()));
+    $f1_valid = (!is_null($f1) && !empty($f1->getValue()));
     
     $f2 = $fields['email'];
-    $f2_valid = (!is_null($f2) && !is_null($f2->getValue()));
+    $f2_valid = (!is_null($f2) && !empty($f2->getValue()));
     
     // Note: Name field had to be renamed to customer-name, as name field is
     // a Wordpress field that (presumably) relates to the name of either a link
@@ -853,15 +854,22 @@ function cp_paylink_action_pay() {
     // this situation, particularly if caused by end users' inadvertent use of
     // special keywords.
     $f3 = $fields['customer-name'];
-    $f3_valid = (!is_null($f3) && !is_null($f3->getValue()));
+    $f3_valid = (!is_null($f3) && !empty($f3->getValue()));
  
     $f4 = $fields['amount'];
-    $f4_valid = (!is_null($f4) && !is_null($f4->getValue()));
+    $f4_valid = (!is_null($f4) && !empty($f4->getValue()));
        
     $f5 = $fields['accept-terms-and-conditions'];
     $f5_valid = (!is_null($f5) && $f5->isChecked());
     
-    if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid) { 
+    $fN_valid = true;
+    foreach ($fields as $key => $field) {
+        if ($field instanceof cp_paylink_text_field) {
+            $fN_valid = ($fN_valid && ($field->isOptional() || (!($field->isOptional() || empty($field->getValue())))));
+        }
+    }
+    
+    if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid || !$fN_valid) { 
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
     }
    
