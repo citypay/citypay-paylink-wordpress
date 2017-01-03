@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.0.6.RELEASE
+ * Version: 1.0.7
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -14,19 +14,24 @@ require_once('includes/class-citypay-library.php');
 require_once('includes/class-citypay-logger.php');
 require_once('includes/class-citypay-stack.php');
 require_once('includes/class-citypay-filter.php');
+require_once('includes/class-citypay-validation.php');
 
 if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
+define('CP_PAYLINK_VERSION', '1.0.7');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
-define('CP_PAYLINK_TEST_MODE', 'cp_paylink_test_mode');
-define('CP_PAYLINK_DEBUG_MODE', 'cp_paylink_debug_mode');
+define('CP_PAYLINK_MERCHANT_EMAIL_ADDRESS', 'cp_paylink_merchant_email_address');
+define('CP_PAYLINK_ENABLE_MERCHANT_EMAIL', 'cp_paylink_enable_merchant_email');
+define('CP_PAYLINK_ENABLE_TEST_MODE', 'cp_paylink_enable_test_mode');
+define('CP_PAYLINK_ENABLE_DEBUG_MODE', 'cp_paylink_enable_debug_mode');
+
+define('CP_PAYLINK_OPT_VERSION', 'cp_paylink_version');
     
 define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
-define('CP_PAYLINK_EMAIL_REGEX', '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)+$/');
 define('CP_PAYLINK_IDENTIFIER_REGEX', '/[A-Za-z0-9]{5,}/');
 
 define('CP_PAYLINK_NO_ERROR', 0x00);
@@ -87,6 +92,30 @@ $cp_paylink_default_error_messages = array(
 define('CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR', 0x05);
 define('CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR', 0x06);
 
+function cp_paylink_install() {
+    
+    $current_version = get_option(CP_PAYLINK_OPT_VERSION);
+    switch ($current_version) {
+        case "1.0.7":
+            break;
+       
+        default:
+            $test_mode = get_option('cp_paylink_test_mode');
+            if (!is_null($test_mode)) {
+                add_option(CP_PAYLINK_ENABLE_TEST_MODE, $test_mode);
+                delete_option('cp_paylink_test_mode');
+            }
+            
+            $debug_mode = get_option('cp_paylink_debug_mode');
+            if (!is_null($debug_mode)) {
+                add_option(CP_PAYLINK_ENABLE_DEBUG_MODE, $debug_mode);
+                delete_option('cp_paylink_debug_mode');
+            }
+    }
+    
+    update_option(CP_PAYLINK_OPT_VERSION, CP_PAYLINK_VERSION);
+}
+
 function cp_paylink_config_stack() {
     static $cp_paylink_config_stack = NULL;
     if (is_null($cp_paylink_config_stack)) {
@@ -128,7 +157,8 @@ function cp_paylink_payform_field_config_sort($v1, $v2) {
         
 class cp_paylink_field {
     public $id, $label, $name, $order, $placeholder;
-    public $value, $content, $passthrough;
+    private $value, $content;
+    public $passthrough;
     public $error, $error_message;
     public function __construct($id, $name, $label, $placeholder = '', $order = 99, $content = null, $passthrough = false) {
         $this->id = $id;
@@ -162,9 +192,19 @@ class cp_paylink_field {
         return '';
     }
     
-    public function parse($value_in, &$value_out) {
+    /**
+     * The parse method is responsible for parsing the field input to
+     * generate the internal state for the object.
+     * 
+     * @param type $value_in
+     *   the value to be parsed.
+     * 
+     * @return boolean
+     *   returns true if the parsing process was successful, and false
+     *   if it was not successful.
+     */
+    public function parse($value_in) {
         $this->value = $value_in;
-        $value_out = $value_in;
         return true;
     }
     
@@ -188,28 +228,42 @@ class cp_paylink_field {
         }
     }
     
+    public function getValue() {
+        return $this->value;
+    }
+    
     public function setContent($content = null) {
         $this->content = $content;
+    }
+    
+    public function setValue($value = null) {
+        $this->value = $value;
     }
 }
 
 class cp_paylink_text_field extends cp_paylink_field {
     public $pattern;
+    private $optional;
    
-    public function __construct($id, $name, $label, $placeholder = '', $pattern = '', $order = 99, $content = null, $passthrough = false) {
+    public function __construct($id, $name, $label, $placeholder = '', $pattern = '', $order = 99, $content = null, $passthrough = false, $optional = false) {
         parent::__construct($id, $name, $label, $placeholder, $order, $content, $passthrough);
         $this->pattern = $pattern;
+        $this->optional = $optional;
     }
     
-    public function parse($value_in, &$value_out) {
-        $r = parent::parse($value_in, $value_out);
-        if ($r) {
-            // See PPWD-3, and PPWD-13
-            if (strlen($value_out) == 0x00) {
-                $this->error = CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING;
-            }
+    public function parse($value_in) {
+        parent::parse($value_in);
+        // See PPWD-3, and PPWD-13
+        if (!$this->optional && strlen(parent::getValue()) == 0x00) {
+            $this->error = CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING;
+            return false;
+        } else {
+            return true;
         }
-        return true;
+    }
+    
+    public function isOptional() {
+        return $this->optional;
     }
 }
 
@@ -217,15 +271,14 @@ class cp_paylink_checkbox_field extends cp_paylink_field {
     public function __construct($id, $name, $label, $order = 99, $content = null, $passthrough = false) {
         parent::__construct($id, $name, $label, '', $order, $content, $passthrough);
     }
-    
-    public function parse($value_in, &$value_out) {
-        $value = ($value_in === 'on');
-        return parent::parse($value, $value_out);
+
+    public function isChecked() {
+        return (parent::getValue() === 'on');
     }
 }
 
 class cp_paylink_amount_field extends cp_paylink_text_field {
-    private $decimal_places, $minimum, $maximum;
+    private $amount, $decimal_places, $minimum, $maximum;
     
     private static function _parse_amount($in, &$out, $decimal_places = null)
     {
@@ -285,7 +338,7 @@ class cp_paylink_amount_field extends cp_paylink_text_field {
     }
     
     public function __construct($id, $name, $label, $placeholder = '', $order = 99, $decimal_places = null, $minimum = null, $maximum = null) {
-        parent::__construct($id, $name, $label, $placeholder, null, $order, null, false);
+        parent::__construct($id, $name, $label, $placeholder, null, $order, null, false, false);
         if (is_null($decimal_places)) {
             $this->decimal_places = null;
         } else {
@@ -311,23 +364,14 @@ class cp_paylink_amount_field extends cp_paylink_text_field {
         }
     }
      
-    public function parse($value_in, &$value_out, $decimal_places = null) {
-        $_val = 0;
-        if (!parent::parse($value_in, $_val)) {
-            // this should relate to an upstream error - TODO: restructure
-            // parse functionality to return more finely grained errors
-            // at all levels (rather than boolean true / false values).
-            $this->error = CP_PAYLINK_NO_ERROR;
-            return false;
-        }
-       
+    public function parse($value_in, $decimal_places = null) {
+        if (!parent::parse($value_in)) { return false; }
         $_decimal_places = (!is_null($decimal_places)?$decimal_places:$this->decimal_places);
-        $r = self::_parse_amount($_val, $value_out, $_decimal_places);
-        if ($r == CP_PAYLINK_NO_ERROR) {
-            if (!is_null($this->minimum) && $value_out < $this->minimum) {
+        if (self::_parse_amount(parent::getValue(), $this->amount, $_decimal_places) == CP_PAYLINK_NO_ERROR) {
+            if (!empty($this->minimum) && $this->amount < $this->minimum) {
                 $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE;
                 return false;
-            } else if (!is_null($this->maximum) && $value_out > $this->maximum) {
+            } else if (!empty($this->maximum) && $this->amount > $this->maximum) {
                 $this->error = CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE;
                 return false;
             } else {
@@ -335,86 +379,81 @@ class cp_paylink_amount_field extends cp_paylink_text_field {
                 return true;
             }
         } else {
-            $this->error = $r;
             return false;
         }
+    }
+    
+    public function getAmount() {
+        return $this->amount;
     }
 }
 
 class cp_paylink_customer_name_field extends cp_paylink_text_field {
-    public function parse($value_in, &$value_out) {
-        $r = parent::parse($value_in, $value_out);
-        if ($r) {
-            if (strlen($value_out) == 0x00) {
-                $this->error = CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING;
+    public $salutation;
+    public $first_name;
+    public $middle_initial;
+    public $last_name;
+    
+    public function parse($value_in) {
+        if (!parent::parse($value_in)) { return false; }
+        if (strlen(parent::getValue()) == 0x00) {
+            $this->error = CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING;
+            return false;
+        } else {
+            $matches = array();
+            if (preg_match(CP_PAYLINK_NAME_REGEX, parent::getValue(), $matches)) {
+                $this->salutation = $matches[1];
+                $this->first_name = $matches[2];
+                $this->middle_initial = $matches[3];
+                $this->last_name = $matches[4];
+                return true;
             } else {
-                $matches = array();
-                $r = preg_match(CP_PAYLINK_NAME_REGEX, $this->value, $matches);
-                if ($r) {
-                    $value_out = array(
-                            'salutation' => $matches[1],
-                            'first-name' => $matches[2],
-                            'middle-initial' => $matches[3],
-                            'last-name' => $matches[4]
-                        );
-                } else {
-                    $this->error = CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID;
-                }
+                $this->error = CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID;
+                return false;
             }
         }
-        return $r;
     }
 }
 
 class cp_paylink_email_field extends cp_paylink_text_field {
-    public function parse($value_in, &$value_out) {
-        $r = parent::parse($value_in, $value_out);
-        if ($r) {
-            if (strlen($value_out) == 0x00) {
-                $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING;
-            } else {
-                $r = preg_match(CP_PAYLINK_EMAIL_REGEX, $this->value);
-                if ($r) {
-                    $value_out = $this->value;
-                } else {
-                    $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID;
-                }
-            }
+    public function parse($value_in) {
+        if (!parent::parse($value_in)) { return false; }  
+        if (strlen(parent::getValue()) == 0x00) {
+            $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING;
+            return false;
+        } else if (!CityPay_Validation::validateEmailAddress(parent::getValue())) {
+            $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID;
+            return false;
         }
-        return $r;
+        return true;
     }
 }
 
 class cp_paylink_identifier_field extends cp_paylink_text_field {
-    public function parse($value_in, &$value_out) {
-        $r = parent::parse($value_in, $value_out);
-        if ($r) {
-            if (strlen($value_out) == 0x00) {
-                $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING;
+    public function parse($value_in) {
+        if (!parent::parse($value_in)) { return false; }
+        if (strlen($this->getValue()) == 0x00) {
+            $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING;
+            return false;
+        } else {
+            if (preg_match(CP_PAYLINK_IDENTIFIER_REGEX, parent::getValue())) {
+                return true;
             } else {
-                $r = preg_match(CP_PAYLINK_IDENTIFIER_REGEX, $this->value);
-                if ($r) {
-                    $value_out = $this->value;
-                } else {
-                    $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID;
-                }
+                $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID;
+                return false;
             }
         }
-        return $r;
     }
 }
 
 class cp_paylink_accept_terms_and_conditions_checkbox_field extends cp_paylink_checkbox_field {
-    public function parse($value_in, &$value_out) {
-        $r = parent::parse($value_in, $value_out);        
-        if ($r) {
-            if (!$value_out) {
-                $this->error = CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED;
-                return false;
-            }
-        }
-       
-        return $r;
+    public function parse($value_in) {
+        if (!parent::parse($value_in)) { return false; }  
+        if (!parent::isChecked()) {
+            $this->error = CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED;
+            return false;
+        }     
+        return true;
     }
 }
 
@@ -452,11 +491,8 @@ function cp_paylink_payform_amount_field($attrs, $content = null) {
         $field->setContent($_content);
     }
         
-    cp_paylink_config_stack()->set(
-            $a['name'],
-            $field
-        );
-    
+    cp_paylink_config_stack()->set($field->name, $field);
+   
     return '';
 }
 
@@ -470,7 +506,8 @@ function cp_paylink_payform_field($attrs, $content = null) {
                     'pattern' => '',
                     'type' => 'text',
                     'id' => null,
-                    'passthrough' => false
+                    'passthrough' => false,
+                    'optional' => false
                 ),
             $attrs
         );
@@ -526,7 +563,8 @@ function cp_paylink_payform_field($attrs, $content = null) {
                 $a['pattern'],
                 $a['order'],
                 null,
-                (bool) $a['passthrough']
+                (bool) $a['passthrough'],
+                (bool) $a['optional']
             );
         break;
     }
@@ -659,7 +697,7 @@ function cp_paylink_payform_display_text_field_default($field) {
         .$field->name
         .'" type="text" value="';
 
-    $s .= $field->value;              
+    $s .= $field->getValue();              
 
     $s .= '" placeholder="'
         .$field->placeholder
@@ -683,9 +721,9 @@ function cp_paylink_payform_display_checkbox_field_default($field) {
         .'</label><div class="col-sm-10"><input class="form-control" name="'
         .$field->name
         .'" type="checkbox"'
-        .($field->value?' checked="on"':'')
+        .($field->isChecked()?' checked="on"':'')
         .' />';
-            
+    $c = null;         
     $c .= $field->getContent();
     if (!empty($c)) {
         $s .= $c;
@@ -705,7 +743,7 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
     // if a configuration has been specified
     $current_url = get_permalink();        
     $s = trim($content)
-       .'<form role="form" id="billPaymentForm" class="form-horizontal" method="POST" action="'
+       .'<form role="form" id="billPaymentForm" class="form-horizontal uk-form" method="POST" action="'
        .add_query_arg('cp_paylink', 'pay', $current_url)
        .'"><input type="hidden" name="cp_paylink_pay" value="Y">';
 
@@ -715,7 +753,7 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
     // Sort the fieldlist appearing in the PayForm configuration according to
     // the order attribute provided.
     //
-    usort($config, cp_paylink_payform_field_config_sort);
+    usort($config, 'cp_paylink_payform_field_config_sort');
 
     foreach ($config as $field) {
         if ($field instanceof cp_paylink_text_field) {
@@ -733,7 +771,7 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
         }
     }
 
-    $s .= '<button type="submit">'
+    $s .= '<button type="submit" class="uk-button uk-button-primary uk-button-large">'
        .$attrs['submit']
        . '</button></form>';
 
@@ -742,9 +780,9 @@ function cp_paylink_payform_display_default($attrs, $content = null) {
 
 function cp_paylink_payform_display($attrs, $content = null) {
     $a = shortcode_atts(
-            array('submit' => __('Pay', cp_paylink_pay)),
-            $attrs
-        );
+        array('submit' => __('Pay', 'cp_paylink_pay')),
+        $attrs
+    );
     
     if (is_single() || is_page())
     {
@@ -792,22 +830,18 @@ function cp_paylink_action_pay() {
     
     $merchant_id = get_option(CP_PAYLINK_MERCHANT_ID);
     $licence_key = get_option(CP_PAYLINK_LICENCE_KEY);
-    $test_mode = get_option(CP_PAYLINK_TEST_MODE);
-    $identifier_out = '';
-    $email_out = '';
-    $name_out = '';
-    $amount_out = 0;
-    $accept_terms_and_conditions_out = false;
-
-    $f_valid = true;
+    $test_mode = get_option(CP_PAYLINK_ENABLE_TEST_MODE);
     
-    $f1 = cp_paylink_config_stack()->get('identifier');
-    $identifier_in = filter_input(INPUT_POST, 'identifier', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f1_valid = (!is_null($f1) && !is_null($identifier_in)) && $f1->parse($identifier_in, $identifier_out);
+    $fields = &cp_paylink_config_stack()->getFields();
+    foreach ($fields as $key => $field) {
+        $field->parse(filter_input(INPUT_POST, $key, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR));
+    }
     
-    $f2 = cp_paylink_config_stack()->get('email');
-    $email_in = filter_input(INPUT_POST, 'email', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f2_valid = (!is_null($f2) && !is_null($email_in)) && $f2->parse($email_in, $email_out);
+    $f1 = $fields['identifier'];
+    $f1_valid = (!is_null($f1) && !empty($f1->getValue()));
+    
+    $f2 = $fields['email'];
+    $f2_valid = (!is_null($f2) && !empty($f2->getValue()));
     
     // Note: Name field had to be renamed to customer-name, as name field is
     // a Wordpress field that (presumably) relates to the name of either a link
@@ -819,36 +853,23 @@ function cp_paylink_action_pay() {
     // May require an element of white / black listing on field names to avoid
     // this situation, particularly if caused by end users' inadvertent use of
     // special keywords.
-    $f3 = cp_paylink_config_stack()->get('customer-name');
-    $name_in = filter_input(INPUT_POST, 'customer-name', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f3_valid = (!is_null($f3) && !is_null($name_in)) && $f3->parse($name_in, $name_out);
+    $f3 = $fields['customer-name'];
+    $f3_valid = (!is_null($f3) && !empty($f3->getValue()));
  
-    $f4 = cp_paylink_config_stack()->get('amount');
-    $amount_in = filter_input(INPUT_POST, 'amount', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f4_valid = (!is_null($f4) && !is_null($amount_in)) && $f4->parse($amount_in, $amount_out);
+    $f4 = $fields['amount'];
+    $f4_valid = (!is_null($f4) && !empty($f4->getValue()));
        
-    $f5 = cp_paylink_config_stack()->get('accept-terms-and-conditions');
-    $accept_terms_and_conditions_in = filter_input(INPUT_POST, 'accept-terms-and-conditions', FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-    $f5_valid = (!is_null($f5)) && $f5->parse($accept_terms_and_conditions_in, $accept_terms_and_conditions_out);
+    $f5 = $fields['accept-terms-and-conditions'];
+    $f5_valid = (!is_null($f5) && $f5->isChecked());
     
-        /*echo '<pre>';
-        echo 'identifier_in = "'.$identifier_in.'"; ';
-        echo 'identifier_out = "'.$identifier_out.'"; ';
-        echo 'email_in = "'.$email_in.'"; ';
-        echo 'email_out = "'.$email_out.'"; ';
-        echo 'name_in = "'.$name_in.'"; ';
-        echo 'name_out = "'.$name_out.'"; ';
-        echo 'amount_in = "'.$amount_in.'";';
-        echo 'amount_out = "'.$amount_out.'";';
-        var_dump($f1_valid);
-        var_dump($f2_valid);
-        var_dump($f3_valid);
-        var_dump($f4_valid);
-        var_dump($f4);
-        echo '</pre>';
-        //exit;*/
+    $fN_valid = true;
+    foreach ($fields as $key => $field) {
+        if ($field instanceof cp_paylink_text_field) {
+            $fN_valid = ($fN_valid && ($field->isOptional() || (!($field->isOptional() || empty($field->getValue())))));
+        }
+    }
     
-    if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid) { 
+    if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid || !$fN_valid) { 
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
     }
    
@@ -862,40 +883,60 @@ function cp_paylink_action_pay() {
     $success_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'success', $current_url);
     $failure_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', $current_url);
     
-    $logger = new CityPay_Logger(plugin_dir_path(__FILE__));
-    $paylink = new CityPay_PayLink($logger);
+    $logger = new CityPay_Logger(__FILE__);
+    $paylink = new CityPay_PayLink($logger);   
+    
+    $identifier = $f1->getValue();
+    $amount = $f4->getAmount();
     $paylink->setRequestCart(
-            $merchant_id,
-            $licence_key,
-            $identifier_out,
-            $amount_out,
-            ''
-        );
+        $merchant_id,
+        $licence_key,
+        $identifier,
+        $amount,
+        ''
+    );
        
+    $email = $f2->getValue();
     $paylink->setRequestAddress(
-            $name_out['first-name'], 
-            $name_out['last-name'],
-            '', '', '', '', '', '',
-            $email_out,
-            ''
+        $f3->first_name, 
+        $f3->last_name,
+        '', '', '', '', '', '',
+        $email,
+        ''
+    );
+    
+    $plugin_data = get_file_data(__FILE__, array('Version'));
+    
+    $paylink->setRequestClient(
+            'Wordpress',
+            get_bloginfo('version', 'raw'),
+            'PayLink-PayForm',
+            CP_PAYLINK_VERSION
         );
     
-    $paylink->setRequestClient('Wordpress', get_bloginfo('version', 'raw'));
     $paylink->setRequestConfig(
             $test_mode,
             $postback_url,
             $success_url,
             $failure_url
         );
+       
+    $merchant_email = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
+    if (!empty($merchant_email)) {
+        $paylink->setRequestMerchant($merchant_email);
+        $enable_merchant_email = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
+        if (!$enable_merchant_email) {
+            $paylink->setRequestConfigOption('BYPASS_MERCHANT_EMAIL');
+        }
+    }
     
-    $fields = &cp_paylink_config_stack()->getFields();
-    foreach ($fields as $field) {
+    foreach ($fields as $key => $field) {
         if ($field->passthrough === true) {
             $paylink->setCustomParameter(
-                    $field->name,
-                    $field->value,
-                    array('fieldType' => 'hidden')
-                );
+                $field->name,
+                $field->getValue(),
+                array('fieldType' => 'hidden')
+            );
         }
     }
     
@@ -916,6 +957,7 @@ function cp_paylink_init() {
         add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
         add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
         add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_payform_checkbox_field');
+        add_shortcode('citypay-payform-text-field', 'cp_paylink_payform_text_field');
         add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
         add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform-on-page-load', 'cp_paylink_payform_on_page_load');
@@ -940,6 +982,7 @@ function cp_paylink_template_redirect_on_redirect_failure()
 
     add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_payform_checkbox_field');
+    add_shortcode('citypay-payform-text-field', 'cp_paylink_payform_text_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
@@ -965,6 +1008,7 @@ function cp_paylink_template_redirect_on_redirect_success()
 
     add_shortcode('citypay-payform-amount-field', 'cp_paylink_payform_amount_field');
     add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_payform_checkbox_field');
+    add_shortcode('citypay-payform-text-field', 'cp_paylink_payform_text_field');
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
@@ -976,54 +1020,56 @@ function cp_paylink_template_redirect_on_redirect_success()
     do_shortcode($page_post->post_content);
 }
 
+function cp_paylink_make_payment()
+{
+    $r = cp_paylink_action_pay();
+    if ($r == CP_PAYLINK_NO_ERROR) { return; }
+    
+    remove_shortcode('citypay-payform');
+    remove_shortcode('citypay-payform-on-redirect-success');
+    remove_shortcode('citypay-payform-on-redirect-failure');
+    remove_shortcode('citypay-payform-on-redirect-cancel');
+    remove_shortcode('citypay-payform-on-page-load');
+    remove_shortcode('citypay-payform-on-error');
+    remove_shortcode('citypay-payform-display');
+    remove_shortcode('citypay-payform-field');
+    remove_shortcode('citypay-payform-checkbox-field');
+    remove_shortcode('citypay-payform-amount-field');
+
+    add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
+    add_shortcode('citypay-payform-amount-field', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-field', 'cp_paylink_shortcode_sink');
+
+    switch ($r)
+    {
+    case CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR:
+        add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
+        add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_passthrough');
+        break;
+
+    case CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR:
+        add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_passthrough');
+        add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
+        break;
+    }
+
+    add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
+    add_action('admin_menu', 'cp_paylink_administration');
+    //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
+    add_filter('plugin_action_links_'.plugin_basename(__FILE__), 'cp_paylink_settings_link');
+}
+
 function cp_paylink_template_redirect_dispatcher() {
-    
-    //echo '<pre>'.$_GET[CP_PAYLINK_DISPATCHER].'</pre>';
-    
     if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
         $action = $_GET[CP_PAYLINK_DISPATCHER];
         switch ($action)
         {
         case 'pay':
-            $r = cp_paylink_action_pay();
-            if ($r != CP_PAYLINK_NO_ERROR) {
-                remove_shortcode('citypay-payform');
-                remove_shortcode('citypay-payform-on-redirect-success');
-                remove_shortcode('citypay-payform-on-redirect-failure');
-                remove_shortcode('citypay-payform-on-redirect-cancel');
-                remove_shortcode('citypay-payform-on-page-load');
-                remove_shortcode('citypay-payform-on-error');
-                remove_shortcode('citypay-payform-display');
-                remove_shortcode('citypay-payform-field');
-                remove_shortcode('citypay-payform-checkbox-field');
-                remove_shortcode('citypay-payform-amount-field');
-                
-                add_shortcode('citypay-payform-display', 'cp_paylink_payform_display');
-                add_shortcode('citypay-payform-amount-field', 'cp_paylink_shortcode_sink');
-                add_shortcode('citypay-payform-checkbox-field', 'cp_paylink_shortcode_sink');
-                add_shortcode('citypay-payform-field', 'cp_paylink_shortcode_sink');
-                
-                switch ($r)
-                {
-                case CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR:
-                    add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
-                    add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_passthrough');
-                    break;
-                    
-                case CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR:
-                    add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_passthrough');
-                    add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
-                    break;
-                }
-                
-                add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
-                add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
-                add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
-                add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
-                add_action('admin_menu', 'cp_paylink_administration');
-                //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
-                add_filter('plugin_action_links_'.plugin_basename(__FILE__), 'cp_paylink_settings_link');
-            }
+            cp_paylink_make_payment();
             break;
 
         case 'postback':
@@ -1052,93 +1098,275 @@ function cp_paylink_settings_link($links) {
 
 function cp_paylink_administration() {
     add_options_page( 
-        __('CityPay PayLink WP', 'cp-paylink-wp'),
-        __('CityPay PayLink WP', 'cp-paylink-wp'),
+        __('CityPay PayLink for WordPress', 'cp-paylink-wp'),
+        __('CityPay PayLink for WordPress', 'cp-paylink-wp'),
         'manage_options',
         'cp-paylink-settings',
         'cp_paylink_settings_page'
     );
 }
 
+function cp_paylink_settings_merchant_id() {
+    $option = get_option(CP_PAYLINK_MERCHANT_ID);
+    echo "<input type='text' id='"
+        . CP_PAYLINK_MERCHANT_ID
+        . "' name='"
+        . CP_PAYLINK_MERCHANT_ID
+        . "' value='${option}' size='16'></input>";
+}
+
+function cp_paylink_settings_licence_key() {
+    $option = get_option(CP_PAYLINK_LICENCE_KEY);
+    echo "<input type='text' id='"
+        . CP_PAYLINK_LICENCE_KEY
+        . "' name='"
+        . CP_PAYLINK_LICENCE_KEY
+        . "' value='${option}' size='16'></input>";
+}
+
+function cp_paylink_settings_merchant_email_address() {
+    $option = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
+    echo "<input type='text' id='"
+        . CP_PAYLINK_MERCHANT_EMAIL_ADDRESS
+        . "' name='"
+        . CP_PAYLINK_MERCHANT_EMAIL_ADDRESS
+        . "' value='${option}' size='60'></input>";
+}
+
+function cp_paylink_settings_enable_merchant_email() {
+    $option = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
+    echo "<input type='checkbox' id='"
+        . CP_PAYLINK_ENABLE_MERCHANT_EMAIL
+        . "' name='"
+        . CP_PAYLINK_ENABLE_MERCHANT_EMAIL
+        . "'"
+        . ($option?' checked':'')
+        . '></input>';
+}
+
+function cp_paylink_settings_enable_test_mode() {
+    $option = get_option(CP_PAYLINK_ENABLE_TEST_MODE, true);
+    echo "<input type='checkbox' id='"
+        . CP_PAYLINK_ENABLE_TEST_MODE
+        . "' name='"
+        . CP_PAYLINK_ENABLE_TEST_MODE
+        . "' "
+        . ($option?' checked':'')
+        . "></input> Generate transactions using test mode"
+        . "<p class='description'>Use this whilst testing your integration. "
+        . "You must disable test mode when you are ready to take live "
+        . "transactions.</p>";
+}
+
+function cp_paylink_settings_enable_debug_mode() {
+    $option = get_option(CP_PAYLINK_ENABLE_DEBUG_MODE, true);
+    echo "<input type='checkbox' id='"
+        . CP_PAYLINK_ENABLE_DEBUG_MODE
+        . "' name='"
+        . CP_PAYLINK_ENABLE_DEBUG_MODE
+        . "'"
+        . ($option?' checked':'')
+        . "></input> Enable logging<p class='description'>Log payment events, "
+        . "such as postback requests, inside <code>"
+        . CityPay_Logger::logFilePathName(__FILE__)
+        . "</code>.</p>";
+}
+
+function cp_paylink_settings_validate_merchant_id($input) {
+    if (!CityPay_Validation::validateMerchantId($input)) {
+        $output = get_option(CP_PAYLINK_MERCHANT_ID);
+        add_settings_error(
+            'merchant-id',
+            'invalid-merchant-id',
+            __('Invalid merchant identifier provided.', 'invalid-merchant-id'),
+            'error'
+        );
+    } else {
+        $output = $input;
+    }
+    
+    return apply_filters('cp_paylink_settings_validate_merchant_id', $output, $output);
+}
+
+function cp_paylink_settings_validate_licence_key($input) {
+    if (!CityPay_Validation::validateLicenceKey($input)) {
+        $output = get_option(CP_PAYLINK_LICENCE_KEY);
+        add_settings_error(
+            'cp-paylink-settings',
+            'invalid-licence-key',
+            __('Invalid licence key provided.', 'invalid-licence-key'),
+            'error'
+        );
+    } else {
+        $output = $input;
+    }
+    
+    return apply_filters('cp_paylink_settings_validate_licence_key', $output, $output);
+}
+
+function cp_paylink_settings_validate_merchant_email_address($input) {
+    if (!CityPay_Validation::validateEmailAddress($input) && !empty($input)) {
+        $output = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
+        add_settings_error(
+            'cp-paylink-settings',
+            'invalid-email-address',
+            __('Invalid email address provided.', 'invalid-email-address'),
+            'error'
+        );
+    } else {
+        $output = $input;
+    }
+    
+    return apply_filters('cp_paylink_settings_validate_merchant_email_address', $output, $output);
+}
+
+function cp_paylink_settings_validate_enable_merchant_email($input) {
+    if (!CityPay_Validation::validateCheckboxValue($input)) {
+        $output = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL);
+        add_settings_error(
+            'cp-paylink-settings',
+            'invalid-enable-merchant-email-checkbox-value',
+            __('Invalid checkbox value for enable merchant email setting.', 'invalid-checkbox-value'),
+            'error'
+        );
+    } else {
+        $output = $input;
+    }
+    
+    return apply_filters('cp_paylink_settings_validate_enable_merchant_email', $output, $output);
+}
+
+function cp_paylink_settings_validate_enable_test_mode($input) {
+    if (!CityPay_Validation::validateCheckboxValue($input)) {
+        $output = get_option(CP_PAYLINK_ENABLE_TEST_MODE);
+        add_settings_error(
+            'cp-paylink-settings',
+            'invalid-enable-test-mode-checkbox-value',
+            __('Invalid checkbox value for enable test mode setting.', 'invalid-checkbox-value'),
+            'error'
+        );
+    } else {
+        $output = $input;
+    }
+    
+    return apply_filters('cp_paylink_settings_validate_enable_test_mode', $output, $output);
+}
+
+function cp_paylink_settings_validate_enable_debug_mode($input) {
+    if (!CityPay_Validation::validateCheckboxValue($input)) {
+        $output = get_option(CP_PAYLINK_ENABLE_DEBUG_MODE);
+        add_settings_error(
+            'cp-paylink-settings',
+            'invalid-enable-debug-mode-checkbox-value',
+            __('Invalid checkbox value for enable debug mode setting.', 'invalid-checkbox-value'),
+            'error'
+        );
+    } else {
+        $output = $input;
+    }
+    
+    return apply_filters('cp_paylink_settings_validate_enable_debug_mode', $output, $output);
+}
+
+function cp_paylink_settings_main_section_text($input) { }
+
+function cp_paylink_admin_init() {
+    
+    add_settings_section(
+        'main_section',
+        'Main Settings',
+        'cp_paylink_settings_main_section_text',
+        'cp-paylink-settings'
+    );
+    
+    add_settings_field(
+        CP_PAYLINK_MERCHANT_ID,
+        'Merchant identifier',
+        'cp_paylink_settings_merchant_id',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Merchant identifier'
+        )
+    );
+    
+    add_settings_field(
+        'licence-key',
+        'Licence Key',
+        'cp_paylink_settings_licence_key',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Licence key'
+        )
+    );
+    
+    add_settings_field(
+        'merchant-email-address',
+        'Email address',
+        'cp_paylink_settings_merchant_email_address',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Email address'
+        )
+    );
+    
+    add_settings_field(
+        'enable-merchant-email',
+        'Enable merchant email',
+        'cp_paylink_settings_enable_merchant_email',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Enable merchant email'
+        )
+    );
+    
+    add_settings_field(
+        'enable-test-mode',
+        'Enable test mode',
+        'cp_paylink_settings_enable_test_mode',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Enable test mode'
+        )
+    );
+    
+    add_settings_field(
+        'enable-debug-mode',
+        'Enable debug mode',
+        'cp_paylink_settings_enable_debug_mode',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Enable debug mode'
+        )
+    );
+    
+    register_setting('cp-paylink-settings', CP_PAYLINK_MERCHANT_ID, 'cp_paylink_settings_validate_merchant_id');
+    register_setting('cp-paylink-settings', CP_PAYLINK_LICENCE_KEY, 'cp_paylink_settings_validate_licence_key');
+    register_setting('cp-paylink-settings', CP_PAYLINK_MERCHANT_EMAIL_ADDRESS, 'cp_paylink_settings_validate_merchant_email_address');
+    register_setting('cp-paylink-settings', CP_PAYLINK_ENABLE_MERCHANT_EMAIL, 'cp_paylink_settings_validate_enable_merchant_email');
+    register_setting('cp-paylink-settings', CP_PAYLINK_ENABLE_TEST_MODE, 'cp_paylink_settings_validate_enable_test_mode');
+    register_setting('cp-paylink-settings', CP_PAYLINK_ENABLE_DEBUG_MODE, 'cp_paylink_settings_validate_enable_debug_mode');
+}
+
 function cp_paylink_settings_page() {
     if (!current_user_can('manage_options')) {
         wp_die(__('You do not have sufficient permissions to access this page.'));
     }
+ 
+    echo '<div class="wrap"><h1>'
+        .__('CityPay PayLink for WordPress', 'cp-paylink-wp')
+        .'</h1><form method="post" action="options.php">';
     
-    $hidden_field_name = 'cp_paylink_payform_hidden_field';
+    settings_fields('cp-paylink-settings');
+    do_settings_sections('cp-paylink-settings');
+    submit_button();
     
-    $merchant_id_option_value = get_option(CP_PAYLINK_MERCHANT_ID, '');
-    $licence_key_option_value = get_option(CP_PAYLINK_LICENCE_KEY, '');
-    $test_mode_option_value = get_option(CP_PAYLINK_TEST_MODE, true);
-    $debug_mode_option_value = get_option(CP_PAYLINK_DEBUG_MODE, true);
-    
-    echo '<div class="">';
-    echo '<h2>'.__( 'CityPay PayLink WP', 'cp-paylink-wp').'</h2>';
-
-    if (isset($_POST[$hidden_field_name]) && $_POST[$hidden_field_name] == 'Y') {
-       
-        $merchant_id_option_value = filter_input(INPUT_POST, CP_PAYLINK_MERCHANT_ID, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-        update_option(CP_PAYLINK_MERCHANT_ID, $merchant_id_option_value);
-        
-        $licence_key_option_value = filter_input(INPUT_POST, CP_PAYLINK_LICENCE_KEY, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
-        update_option(CP_PAYLINK_LICENCE_KEY, $licence_key_option_value);
-        
-        $test_mode_option_value = (filter_input(INPUT_POST, CP_PAYLINK_TEST_MODE, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR) == 'on');  
-        update_option(CP_PAYLINK_TEST_MODE, $test_mode_option_value);
-        
-        $debug_mode_option_value = (filter_input(INPUT_POST, CP_PAYLINK_DEBUG_MODE, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR) == 'on');  
-        update_option(CP_PAYLINK_DEBUG_MODE, $debug_mode_option_value);
-        
-        echo '<div class="updated below-h2"><p><strong>'
-            .__('Updated settings saved.', 'updated-settings-saved')
-            .'</strong></p></div>';
-    }
-    
-    ?>
-    
-<form name="form1" method="post" action="">
-<input type="hidden" name="<?php echo $hidden_field_name; ?>" value="Y">
-<table class="form-table">
-    <tbody>
-    <tr>
-        <th class="titledesc"><label><?php _e("Merchant ID", 'merchant-id'); ?></label></th>
-        <td class="forminp"><input type="text" name="<?php echo CP_PAYLINK_MERCHANT_ID; ?>" value="<?php echo $merchant_id_option_value; ?>" size="16"></input></td>
-    </tr>
-    <tr>
-        <th class="titledesc"><label><?php _e("Licence key", 'licence-key'); ?></label></th>
-        <td class="forminp"><input type="text" name="<?php echo CP_PAYLINK_LICENCE_KEY; ?>" value="<?php echo $licence_key_option_value; ?>" size="16"></input></td>
-    </tr>
-    <tr>
-        <th class="titledesc"><label><?php _e("Test Mode", 'test-mode'); ?></label></th>
-        <td class="forminp">
-            <fieldset>
-                <label><input type="checkbox" name="<?php echo CP_PAYLINK_TEST_MODE; ?>" <?php echo ($test_mode_option_value?'checked':''); ?>></input>
-                    Generate transactions using test mode
-                </label><p class="description">Use this whilst testing your integration. You must disable test mode when you are ready to take live transactions.</p>
-            </fieldset>
-        </td>
-    </tr>
-    <tr>
-        <th class="titledesc"><label><?php _e("Debug Mode", 'debug-mode'); ?></label></th>
-        <td class="forminp">
-            <fieldset>
-                <label><input type="checkbox" name="<?php echo CP_PAYLINK_DEBUG_MODE; ?>" <?php echo ($debug_mode_option_value?'checked':''); ?>></input>
-                    Enable logging
-                </label><p class="description">Log payment events, such as postback requests, inside <code>XXXXX</code>.</p>
-            </fieldset>
-        </td>
-    </tr>
-    </tbody>
-</table>
-<p class="submit">
-<input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e('Save Changes') ?>" />
-</p>
-
-</form>
-    
-    <?php
-    
-    echo '</div>';
+    echo '</form></div>';
 }
 
 function cp_paylink_exempt_shortcodes_from_texturize($shortcodes) {
@@ -1147,5 +1375,8 @@ function cp_paylink_exempt_shortcodes_from_texturize($shortcodes) {
 }
 
 add_action('init', 'cp_paylink_init');
+add_action('admin_init', 'cp_paylink_admin_init');
 add_action('wp_loaded', 'cp_paylink_wp_loaded');
 add_filter('no_texturize_shortcodes', 'cp_paylink_exempt_shortcodes_from_texturize');
+
+register_activation_hook(__FILE__, 'cp_paylink_install');

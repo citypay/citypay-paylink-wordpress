@@ -3,7 +3,7 @@
 <project name="citypay-paylink-wordpress" default="dist">
     
     <property name="package" value="${phing.project.name}" override="true" />
-    <property name="version" value="1.0.6" override="true" />
+    <property name="version" value="1.0.7" override="true" />
     <propertyregex property="packageversion"
         subject="${package}_${version}"
         pattern="\."

@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.0.0
+ * Version: 1.0.7
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -12,6 +12,8 @@ defined('ABSPATH') or die;
 
 define(CP_PAYLINKJS_PAYFORM_TEST_DOMAIN_KEY_OPTION_NAME, 'cp_paylinkjs_payform_test_domain_key');
 define(CP_PAYLINKJS_PAYFORM_LIVE_DOMAIN_KEY_OPTION_NAME, 'cp_paylinkjs_payform_live_domain_key');
+define(CP_PAYLINKJS_PAYFORM_MERCHANT_EMAIL_ADDRESS_OPTION_NAME, 'cp_paylinkjs_payform_merchant_email_address');
+define(CP_PAYLINKJS_PAYFORM_ENABLE_MERCHANT_EMAIL_OPTION_NAME, 'cp_paylinkjs_payform_enable_merchant_email');
 define(CP_PAYLINKJS_PAYFORM_MODE_OPTION_NAME, 'cp_paylinkjs_payform_mode');
 
 function cp_payform_enqueue_styles() {
@@ -108,6 +110,8 @@ function cp_payform_settings_page()
     
     $test_domain_key_option_value = get_option(CP_PAYLINKJS_PAYFORM_TEST_DOMAIN_KEY_OPTION_NAME, '');
     $live_domain_key_option_value = get_option(CP_PAYLINKJS_PAYFORM_LIVE_DOMAIN_KEY_OPTION_NAME, '');
+    $merchant_email_address_option_value = get_option(CP_PAYLINKJS_PAYFORM_MERCHANT_EMAIL_ADDRESS_OPTION_NAME, '');
+    $enable_merchant_email_option = get_option(CP_PAYLINKJS_PAYFORM_ENABLE_MERCHANT_EMAIL_OPTION_NAME, false);
     $mode_option_value = get_option(CP_PAYLINKJS_PAYFORM_MODE_OPTION_NAME, true);
     
     echo '<div class="">';
@@ -120,6 +124,12 @@ function cp_payform_settings_page()
         
         $live_domain_key_option_value = filter_input(INPUT_POST, CP_PAYLINKJS_PAYFORM_LIVE_DOMAIN_KEY_OPTION_NAME, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
         update_option(CP_PAYLINKJS_PAYFORM_LIVE_DOMAIN_KEY_OPTION_NAME, $live_domain_key_option_value);
+        
+        $merchant_email_address_option_value = filter_input(INPUT_POST, CP_PAYLINKJS_PAYFORM_MERCHANT_EMAIL_ADDRESS_OPTION_NAME, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR);
+        update_option(CP_PAYLINKJS_PAYFORM_MERCHANT_EMAIL_ADDRESS_OPTION_NAME, $merchant_email_address_option_value);
+            
+        $enable_merchant_email_option_value = (filter_input(INPUT_POST, CP_PAYLINKJS_PAYFORM_ENABLE_MERCHANT_EMAIL_OPTION_NAME, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR) == 'on');
+        update_option(CP_PAYLINKJS_PAYFORM_ENABLE_MERCHANT_EMAIL_OPTION_NAME, $enable_merchant_email_option_value);
         
         $mode_option_value = (filter_input(INPUT_POST, CP_PAYLINKJS_PAYFORM_MODE_OPTION_NAME, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR) == 'on');  
         update_option(CP_PAYLINKJS_PAYFORM_MODE_OPTION_NAME, $mode_option_value);
@@ -142,6 +152,14 @@ function cp_payform_settings_page()
     <tr>
         <th class="titledesc"><label><?php _e("Live domain key", 'live-domain-key'); ?></label></th>
         <td class="forminp"><input type="text" name="<?php echo CP_PAYLINKJS_PAYFORM_LIVE_DOMAIN_KEY_OPTION_NAME; ?>" value="<?php echo $live_domain_key_option_value; ?>" size="60"></input></td>
+    </tr>
+    <tr>
+        <th class="titledesc"><label><?php _e("Merchant email address", 'merchant-email-address'); ?></label></th>
+        <td class="forminp"><input type="text" name="<?php echo CP_PAYLINKJS_PAYFORM_MERCHANT_EMAIL_ADDRESS_OPTION_NAME; ?>" value="<?php echo $merchant_email_address_option_value; ?>" size="60"></input></td>
+    </tr>
+    <tr>
+        <th class="titledesc"><label><?php _e("Enable merchant email", 'enable-merchant-email'); ?></label></th>
+        <td class="forminp"><input type="checkbox" name="<?php echo CP_PAYLINKJS_PAYFORM_ENABLE_MERCHANT_EMAIL_OPTION_NAME; ?>" <?php echo ($enable_merchant_email_option_value?'checked':''); ?>></input>
     </tr>
     <tr>
         <th class="titledesc"><label><?php _e("Test Mode", 'test-mode'); ?></label></th>

@@ -2,6 +2,12 @@
 
 class CityPay_Logger
 {
+    public static function logFilePathName($plugin_file_path) {
+        return dirname($plugin_file_path)
+            .'/logs/'
+            .date('Y-m-d').'.log';
+    }
+    
     private $log_file;
     private $newline;
     
@@ -18,7 +24,12 @@ class CityPay_Logger
     }
     
     public function __construct($plugin_file_path) {
-        $this->log_file = $plugin_file_path.'/logs/'.date('Y-m-d').'.log';
+        $this->log_file = self::logFilePathName($plugin_file_path);
+        $log_file_directory = dirname($this->log_file);
+        if (!file_exists($log_file_directory)) {
+            mkdir($log_file_directory, 0777, true);
+        }
+       
         $this->newline = self::_getNewLineString(php_uname('s'));
     }
     
