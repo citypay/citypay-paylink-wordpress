@@ -1,4 +1,4 @@
-CityPay Paylink PayForm WP
+CityPay Paylink WordPress Plugin
 ==========================
 
 CityPay Paylink PayForm WP is a plugin that supplements Wordpress with
