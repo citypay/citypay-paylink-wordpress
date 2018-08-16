@@ -916,7 +916,8 @@ function cp_paylink_action_pay() {
     
     $paylink->setRequestConfig(
             $test_mode,
-            $postback_url,
+//            $postback_url,
+            empty($postback_url),
             $success_url,
             $failure_url
         );

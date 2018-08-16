@@ -46,3 +46,4 @@ fabric.properties
 /.env
 /.idea/
 /db/
+/src/logs/

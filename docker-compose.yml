@@ -13,7 +13,7 @@ services:
         networks:
                 - wordpressnet
     wordpress:
-        image: citypay/wordpress:1.0.7
+        image: citypay/wordpress:1.1.0
         ports:
                 - 127.0.0.1:80:80
                 - 127.0.0.1:4040:4040
