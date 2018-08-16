@@ -994,12 +994,13 @@ function cp_paylink_template_redirect_on_redirect_failure()
     do_shortcode($page_post->post_content);
 }
 
-function cp_paylink_template_redirect_on_postback()
-{
-    ob_clean();
-    header('HTTP/1.1 200 OK');
-    exit;
-}
+//function cp_paylink_template_redirect_on_postback()
+//{
+//    ob_clean();
+//    // Boilerplate code to be implemented if post backs are required
+//    header('HTTP/1.1 200 OK');
+//    exit;
+//}
 
 function cp_paylink_template_redirect_on_redirect_success()
 {
