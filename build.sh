@@ -8,4 +8,4 @@ VERSION=$(awk '/Version: /{print $NF}' src/paylink.php)
 echo $VERSION
 
 zip -r citypay-paylink-wordpress-$VERSION.zip citypay-paylink-wordpress \
- && rm -rf citypay-paylink-wordpress && mv citypay-paylink-wordpress-$VERSION.zip dist
+ && rm -rf citypay-paylink-wordpress && mkdir -p dist && mv citypay-paylink-wordpress-$VERSION.zip dist
