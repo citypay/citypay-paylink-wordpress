@@ -124,14 +124,16 @@ class CityPay_PayLink_WP {
 			'redirect_success' => $return_success_url,
 			'redirect_failure' => $return_failure_url)
 		);
-		if (empty($postback_url)) {
-			$this->request_config['config']['redirect_params'] = true;
-			$this->request_config['config']['postback_policy'] = 'none';
-		} else {
-			$this->request_config['config']['redirect_params'] = false;
-			$this->request_config['config']['postback'] = $postback_url;
-			$this->request_config['config']['postback_policy'] = 'sync';
-		}
+        $this->request_config['config']['redirect_params'] = true;
+        $this->request_config['config']['postback_policy'] = 'none';
+//		if (empty($postback_url)) {
+//			$this->request_config['config']['redirect_params'] = true;
+//			$this->request_config['config']['postback_policy'] = 'none';
+//		} else {
+//			$this->request_config['config']['redirect_params'] = false;
+//			$this->request_config['config']['postback'] = $postback_url;
+//			$this->request_config['config']['postback_policy'] = 'sync';
+//		}
 	}
     
     public function setRequestConfigOption($option) {

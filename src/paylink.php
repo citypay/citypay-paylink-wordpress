@@ -916,8 +916,7 @@ function cp_paylink_action_pay() {
     
     $paylink->setRequestConfig(
             $test_mode,
-//            $postback_url,
-            empty($postback_url),
+            $postback_url,
             $success_url,
             $failure_url
         );
@@ -995,13 +994,12 @@ function cp_paylink_template_redirect_on_redirect_failure()
     do_shortcode($page_post->post_content);
 }
 
-//function cp_paylink_template_redirect_on_postback()
-//{
-//    ob_clean();
-//    // Boilerplate code to be implemented if post backs are required
-//    header('HTTP/1.1 200 OK');
-//    exit;
-//}
+function cp_paylink_template_redirect_on_postback()
+{
+    ob_clean();
+    header('HTTP/1.1 200 OK');
+    exit;
+}
 
 function cp_paylink_template_redirect_on_redirect_success()
 {
