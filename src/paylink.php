@@ -20,7 +20,7 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
-define('CP_PAYLINK_VERSION', '1.0.7');
+define('CP_PAYLINK_VERSION', '1.1.0');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
@@ -884,7 +884,7 @@ function cp_paylink_action_pay() {
     $failure_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', $current_url);
     
     $logger = new CityPay_Logger(__FILE__);
-    $paylink = new CityPay_PayLink_WP($logger);
+    $paylink = new CP_PayLink($logger);
     
     $identifier = $f1->getValue();
     $amount = $f4->getAmount();
@@ -1281,7 +1281,7 @@ function cp_paylink_admin_init() {
     
     add_settings_field(
         CP_PAYLINK_MERCHANT_ID,
-        'Merchant identifier',
+        'Merchant Identifier',
         'cp_paylink_settings_merchant_id',
         'cp-paylink-settings',
         'main_section',
@@ -1292,7 +1292,7 @@ function cp_paylink_admin_init() {
     
     add_settings_field(
         'licence-key',
-        'Licence Key',
+        '(Client) Licence Key',
         'cp_paylink_settings_licence_key',
         'cp-paylink-settings',
         'main_section',

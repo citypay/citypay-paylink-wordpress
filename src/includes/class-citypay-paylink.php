@@ -3,7 +3,7 @@
 
 require_once('class-citypay-library.php');
 
-class CityPay_PayLink_WP {
+class CP_PayLink {
 
 	private $pay_module;
 	private	$request_addr = array();
