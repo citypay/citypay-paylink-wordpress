@@ -1,5 +1,5 @@
-FROM wordpress:4.9-php7.1-apache
 LABEL maintainer="Michael Martins <michael.martins@citypay.com>"
+FROM wordpress:4.9-php7.1-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
