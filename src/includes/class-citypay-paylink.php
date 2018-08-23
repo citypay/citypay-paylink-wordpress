@@ -23,7 +23,7 @@ class CP_PayLink {
 		if (count($args)==1) {
 			$this->pay_module = $args[0];
 		} else {
-			throw new Exception('Payment module must be provided to constructor.');
+            throw new Exception('Payment module must be provided to constructor.');
 		}
 	}
 
@@ -87,6 +87,7 @@ class CP_PayLink {
 				'firstName'	=> trim($fname),
 				'lastName'	=> trim($lname),
 				'email'		=> trim($email),
+				'mobile'    => trim($phone),
 				'address'	=> array (
 					'address1'	=> trim($addr1),
 					'address2'	=> trim($addr2),
