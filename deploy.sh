@@ -19,9 +19,9 @@ echo "Project: $PROJECT"
 echo "Source: $PLUGINPATH"
 echo "Mainfile: $MAINFILE"
 
-VERSION=`grep -E "Version: " "$PLUGINPATH/$MAINFILE" | awk -F' ' '{print $2}'`
+VERSION=$(grep -E "Version: " "$PLUGINPATH/$MAINFILE" | awk -F' ' '{print $2}')
 README="$PLUGINPATH/readme.txt"
-RVERSION=`grep "^Stable tag" "$README" | awk -F' ' '{print $3}'`
+RVERSION=$(grep "^Stable tag" "$README" | awk -F' ' '{print $3}')
 
 echo "MAINFILE version: $VERSION"
 echo "README   version: $RVERSION"
