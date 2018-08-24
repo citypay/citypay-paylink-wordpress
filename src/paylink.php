@@ -96,7 +96,7 @@ function cp_paylink_install() {
     
     $current_version = get_option(CP_PAYLINK_OPT_VERSION);
     switch ($current_version) {
-        case "1.0.7":
+        case "1.1.0":
             break;
        
         default:
