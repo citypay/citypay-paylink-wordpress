@@ -20,7 +20,7 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
-define('CP_PAYLINK_VERSION', '1.0.7');
+define('CP_PAYLINK_VERSION', '1.1.1');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
@@ -97,7 +97,7 @@ function cp_paylink_install() {
     
     $current_version = get_option(CP_PAYLINK_OPT_VERSION);
     switch ($current_version) {
-        case "1.0.7":
+        case "1.1.1":
             break;
        
         default:
@@ -1304,7 +1304,7 @@ function cp_paylink_admin_init() {
     
     add_settings_field(
         CP_PAYLINK_MERCHANT_ID,
-        'Merchant identifier',
+        'Merchant Identifier',
         'cp_paylink_settings_merchant_id',
         'cp-paylink-settings',
         'main_section',
@@ -1315,7 +1315,7 @@ function cp_paylink_admin_init() {
     
     add_settings_field(
         'licence-key',
-        'Licence Key',
+        'Client Licence Key',
         'cp_paylink_settings_licence_key',
         'cp-paylink-settings',
         'main_section',
