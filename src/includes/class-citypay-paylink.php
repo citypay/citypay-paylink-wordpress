@@ -3,7 +3,7 @@
 
 require_once('class-citypay-library.php');
 
-class CP_PayLink {
+class CityPay_PayLink_WP {
 
 	private $pay_module;
 	private	$request_addr = array();
@@ -23,7 +23,7 @@ class CP_PayLink {
 		if (count($args)==1) {
 			$this->pay_module = $args[0];
 		} else {
-            throw new Exception('Payment module must be provided to constructor.');
+			throw new Exception('Payment module must be provided to constructor.');
 		}
 	}
 
@@ -37,12 +37,11 @@ class CP_PayLink {
 		$conf_cur = trim(strtoupper($this->pay_module->getCurrencyConfig($conf_num)));
 		$conf_mid = trim($this->pay_module->getMerchantConfig($conf_num));
 		$conf_key = trim($this->pay_module->getLicenceConfig($conf_num));
-		if (empty($conf_cur) ||  // Currency code not configured
-            empty($conf_mid) ||  // Merchant ID not configured
-            empty($conf_key) ||  // Licence key not configured
-            !ctype_digit($conf_mid) ||  // Merchant ID is not numeric
-            strcasecmp($conf_cur,$currencyCode)!=0) { return null; } // Does not match required currency
-
+		if (empty($conf_cur)) { return null; }		// Currency code not configured
+		if (empty($conf_mid)) { return null; }		// Merchant ID not configured
+		if (empty($conf_key)) { return null; }		// Licence key not configured
+		if (!ctype_digit($conf_mid)) { return null; }	// Merchant ID is not numeric
+		if (strcasecmp($conf_cur,$currencyCode)!=0) { return null; }	// Does not match required currency
 		return array($conf_mid,$conf_key,$conf_cur);	// Matched, return config details
 	}
 
@@ -87,7 +86,6 @@ class CP_PayLink {
 				'firstName'	=> trim($fname),
 				'lastName'	=> trim($lname),
 				'email'		=> trim($email),
-				'mobile'    => trim($phone),
 				'address'	=> array (
 					'address1'	=> trim($addr1),
 					'address2'	=> trim($addr2),
@@ -97,11 +95,11 @@ class CP_PayLink {
 					'country'	=> trim(strtoupper($country)))));
 	}
 
-	public function setRequestCart($mid,$key,$cart_id,$price,$cart_desc) {
+	public function setRequestCart($mid,$key,$prefix,$cart_id,$price,$cart_desc) {
 		$this->request_cart = array(
 			'merchantid' => (int)$mid,
 			'licenceKey' => $key,
-			'identifier' => trim($cart_id),
+			'identifier' => trim($prefix.$cart_id),
             'amount' => (int)$price,
             'cart' => array(
             'productInformation' => trim($cart_desc))
@@ -126,8 +124,6 @@ class CP_PayLink {
 			'redirect_success' => $return_success_url,
 			'redirect_failure' => $return_failure_url)
 		);
-
-        // comment the following 2 lines and uncomment (if else) block to enable postback
         $this->request_config['config']['redirect_params'] = true;
         $this->request_config['config']['postback_policy'] = 'none';
 //		if (empty($postback_url)) {

@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -20,10 +20,11 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
-define('CP_PAYLINK_VERSION', '1.1.0');
+define('CP_PAYLINK_VERSION', '1.0.7');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
+define('CP_PAYLINK_IDENTIFIER_PREFIX', 'cp_paylink_identifier_prefix');
 define('CP_PAYLINK_MERCHANT_EMAIL_ADDRESS', 'cp_paylink_merchant_email_address');
 define('CP_PAYLINK_ENABLE_MERCHANT_EMAIL', 'cp_paylink_enable_merchant_email');
 define('CP_PAYLINK_ENABLE_TEST_MODE', 'cp_paylink_enable_test_mode');
@@ -96,7 +97,7 @@ function cp_paylink_install() {
     
     $current_version = get_option(CP_PAYLINK_OPT_VERSION);
     switch ($current_version) {
-        case "1.1.0":
+        case "1.0.7":
             break;
        
         default:
@@ -830,6 +831,7 @@ function cp_paylink_action_pay() {
     
     $merchant_id = get_option(CP_PAYLINK_MERCHANT_ID);
     $licence_key = get_option(CP_PAYLINK_LICENCE_KEY);
+    $identifier_prefix = get_option(CP_PAYLINK_IDENTIFIER_PREFIX);
     $test_mode = get_option(CP_PAYLINK_ENABLE_TEST_MODE);
     
     $fields = &cp_paylink_config_stack()->getFields();
@@ -884,13 +886,14 @@ function cp_paylink_action_pay() {
     $failure_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', $current_url);
     
     $logger = new CityPay_Logger(__FILE__);
-    $paylink = new CP_PayLink($logger);
+    $paylink = new CityPay_PayLink_WP($logger);
     
     $identifier = $f1->getValue();
     $amount = $f4->getAmount();
     $paylink->setRequestCart(
         $merchant_id,
         $licence_key,
+        $identifier_prefix,
         $identifier,
         $amount,
         ''
@@ -1112,7 +1115,7 @@ function cp_paylink_settings_merchant_id() {
         . CP_PAYLINK_MERCHANT_ID
         . "' name='"
         . CP_PAYLINK_MERCHANT_ID
-        . "' value='${option}' size='16'></input>";
+        . "' value='${option}' size='20'></input>";
 }
 
 function cp_paylink_settings_licence_key() {
@@ -1121,7 +1124,7 @@ function cp_paylink_settings_licence_key() {
         . CP_PAYLINK_LICENCE_KEY
         . "' name='"
         . CP_PAYLINK_LICENCE_KEY
-        . "' value='${option}' size='16'></input>";
+        . "' value='${option}' size='20'></input>";
 }
 
 function cp_paylink_settings_merchant_email_address() {
@@ -1142,6 +1145,15 @@ function cp_paylink_settings_enable_merchant_email() {
         . "'"
         . ($option?' checked':'')
         . '></input>';
+}
+
+function cp_paylink_settings_identifier_prefix() {
+    $option = get_option(CP_PAYLINK_IDENTIFIER_PREFIX);
+    echo "<input type='text' id='"
+        . CP_PAYLINK_IDENTIFIER_PREFIX
+        . "' name='"
+        . CP_PAYLINK_IDENTIFIER_PREFIX
+        . "' value='${option}' size='20' placeholder='(optional)'></input>";
 }
 
 function cp_paylink_settings_enable_test_mode() {
@@ -1201,7 +1213,18 @@ function cp_paylink_settings_validate_licence_key($input) {
         $output = $input;
     }
     
-    return apply_filters('cp_paylink_settings_validate_licence_key', $output, $output);
+    return apply_filters('cp_paylink_settings_validate_identifier_prefix', $output, $output);
+}
+function cp_paylink_settings_validate_identifier_prefix($input) {
+
+    if ($input){
+        $output = $input;
+    } else{
+        $output = '';
+    }
+
+
+    return apply_filters('cp_paylink_settings_validate_identifier_prefix', $output, $output);
 }
 
 function cp_paylink_settings_validate_merchant_email_address($input) {
@@ -1281,7 +1304,7 @@ function cp_paylink_admin_init() {
     
     add_settings_field(
         CP_PAYLINK_MERCHANT_ID,
-        'Merchant Identifier',
+        'Merchant identifier',
         'cp_paylink_settings_merchant_id',
         'cp-paylink-settings',
         'main_section',
@@ -1292,7 +1315,7 @@ function cp_paylink_admin_init() {
     
     add_settings_field(
         'licence-key',
-        '(Client) Licence Key',
+        'Licence Key',
         'cp_paylink_settings_licence_key',
         'cp-paylink-settings',
         'main_section',
@@ -1322,6 +1345,17 @@ function cp_paylink_admin_init() {
             'label_for' => 'Enable merchant email'
         )
     );
+
+    add_settings_field(
+        'identifier-prefix',
+        'Identifier Prefix',
+        'cp_paylink_settings_identifier_prefix',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Identifier prefix'
+        )
+    );
     
     add_settings_field(
         'enable-test-mode',
@@ -1347,6 +1381,7 @@ function cp_paylink_admin_init() {
     
     register_setting('cp-paylink-settings', CP_PAYLINK_MERCHANT_ID, 'cp_paylink_settings_validate_merchant_id');
     register_setting('cp-paylink-settings', CP_PAYLINK_LICENCE_KEY, 'cp_paylink_settings_validate_licence_key');
+    register_setting('cp-paylink-settings', CP_PAYLINK_IDENTIFIER_PREFIX, 'cp_paylink_settings_validate_identifier_prefix');
     register_setting('cp-paylink-settings', CP_PAYLINK_MERCHANT_EMAIL_ADDRESS, 'cp_paylink_settings_validate_merchant_email_address');
     register_setting('cp-paylink-settings', CP_PAYLINK_ENABLE_MERCHANT_EMAIL, 'cp_paylink_settings_validate_enable_merchant_email');
     register_setting('cp-paylink-settings', CP_PAYLINK_ENABLE_TEST_MODE, 'cp_paylink_settings_validate_enable_test_mode');
