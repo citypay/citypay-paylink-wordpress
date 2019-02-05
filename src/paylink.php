@@ -151,11 +151,11 @@ function cp_paylink_add_query_vars_filter($vars)
     return $vars;
 }
 
-function cp_paylink_payform_field_config_sort($v1, $v2)
+function cp_paylink_payform_field_config_sort($val1, $val2)
 {
-    if ($v1->order > $v2->order) {
+    if ($val1->order > $val2->order) {
         return 1;
-    } elseif ($v1->order < $v2->order) {
+    } elseif ($val1->order < $val2->order) {
         return -1;
     } else {
         return 0;
@@ -169,9 +169,9 @@ class cp_paylink_field
     public $passthrough;
     public $error, $error_message;
 
-    public function __construct($id, $name, $label, $placeholder = '', $order = 99, $content = null, $passthrough = false)
+    public function __construct($identifier, $name, $label, $placeholder = '', $order = 99, $content = null, $passthrough = false)
     {
-        $this->id = $id;
+        $this->id = $identifier;
         $this->name = $name;
         $this->label = $label;
         $this->placeholder = $placeholder;
@@ -263,9 +263,9 @@ class cp_paylink_text_field extends cp_paylink_field
     public $pattern;
     private $optional;
 
-    public function __construct($id, $name, $label, $placeholder = '', $pattern = '', $order = 99, $content = null, $passthrough = false, $optional = false)
+    public function __construct($identifier, $name, $label, $placeholder = '', $pattern = '', $order = 99, $content = null, $passthrough = false, $optional = false)
     {
-        parent::__construct($id, $name, $label, $placeholder, $order, $content, $passthrough);
+        parent::__construct($identifier, $name, $label, $placeholder, $order, $content, $passthrough);
         $this->pattern = $pattern;
         $this->optional = $optional;
     }
@@ -284,9 +284,9 @@ class cp_paylink_text_field extends cp_paylink_field
 
 class cp_paylink_checkbox_field extends cp_paylink_field
 {
-    public function __construct($id, $name, $label, $order = 99, $content = null, $passthrough = false)
+    public function __construct($identifier, $name, $label, $order = 99, $content = null, $passthrough = false)
     {
-        parent::__construct($id, $name, $label, '', $order, $content, $passthrough);
+        parent::__construct($identifier, $name, $label, '', $order, $content, $passthrough);
     }
 
     public function isChecked()
@@ -304,18 +304,18 @@ class cp_paylink_amount_field extends cp_paylink_text_field
 
         $_in = trim($in);
         $_out = 0;
-        $i = 0;
+        $index = 0;
         $i_max = strlen($_in);
 
         if ($i_max <= 0x00) {
             return CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING;
         }
 
-        while ($i < $i_max) {
-            $c = ord($_in[$i]);
+        while ($index < $i_max) {
+            $c = ord($_in[$index]);
             if ($c >= 48 && $c <= 57) {
                 $_out = ($_out * 10) + ($c - 48);
-                $i++;
+                $index++;
             } else if ($c === ord('.')) {
                 break;
             } else {
@@ -325,25 +325,25 @@ class cp_paylink_amount_field extends cp_paylink_text_field
 
         $_out *= 100;
 
-        if ($i >= $i_max) {
+        if ($index >= $i_max) {
             $out = $_out;
             return CP_PAYLINK_NO_ERROR;
         }
 
         if ($c == ord('.')) {
-            $i++;
+            $index++;
             $pence = 0;
 
-            if (!is_null($decimal_places) && $i_max > $i + $decimal_places) {
+            if (!is_null($decimal_places) && $i_max > $index + $decimal_places) {
                 return CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION;
             }
 
             $j = $decimal_places;
-            while ($i < $i_max) {
-                $c = ord($_in[$i]);
+            while ($index < $i_max) {
+                $c = ord($_in[$index]);
                 if ($c >= 48 && $c <= 57) {
                     $pence = ($pence * 10) + ($c - 48);
-                    $i++;
+                    $index++;
                     $j--;
                 } else {
                     return CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER;
@@ -361,9 +361,9 @@ class cp_paylink_amount_field extends cp_paylink_text_field
         return CP_PAYLINK_NO_ERROR;
     }
 
-    public function __construct($id, $name, $label, $placeholder = '', $order = 99, $decimal_places = null, $minimum = null, $maximum = null)
+    public function __construct($identifier, $name, $label, $placeholder = '', $order = 99, $decimal_places = null, $minimum = null, $maximum = null)
     {
-        parent::__construct($id, $name, $label, $placeholder, null, $order, null, false, false);
+        parent::__construct($identifier, $name, $label, $placeholder, null, $order, null, false, false);
         if (is_null($decimal_places)) {
             $this->decimal_places = null;
         } else {
