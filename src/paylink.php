@@ -479,7 +479,7 @@ class cp_paylink_identifier_field extends cp_paylink_text_field
             $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING;
             return false;
         } else {
-            if (preg_match(CP_PAYLINK_IDENTIFIER_REGEX, parent::getValue())) {
+            if (preg_match(CP_PAYLINK_IDENTIFIER_REGEX, get_option(CP_PAYLINK_IDENTIFIER_PREFIX).parent::getValue())) {
                 return true;
             } else {
                 $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID;
