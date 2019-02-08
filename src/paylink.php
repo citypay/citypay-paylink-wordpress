@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -358,6 +358,7 @@ class cp_paylink_amount_field extends cp_paylink_text_field
         }
 
         $out = $_out;
+//        echo "<br/>PPPLLLL RETURNING NO ERROR:" . $in;
         return CP_PAYLINK_NO_ERROR;
     }
 
@@ -479,7 +480,7 @@ class cp_paylink_identifier_field extends cp_paylink_text_field
             $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING;
             return false;
         } else {
-            if (preg_match(CP_PAYLINK_IDENTIFIER_REGEX, parent::getValue())) {
+            if (preg_match(CP_PAYLINK_IDENTIFIER_REGEX, get_option(CP_PAYLINK_IDENTIFIER_PREFIX) . parent::getValue())) {
                 return true;
             } else {
                 $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID;
@@ -899,11 +900,13 @@ function cp_paylink_action_pay()
         $field->parse(filter_input(INPUT_POST, $key, FILTER_DEFAULT, FILTER_REQUIRE_SCALAR));
     }
 
-    $f1 = $fields['identifier'];
-    $f1_valid = (!is_null($f1) && !empty($f1->getValue()));
+    $f_identifier = $fields['identifier'];
+//    $f_identifier_valid = (!is_null($f_identifier) && !empty($f_identifier->getValue()));
+//    $f_identifier_invalid = (is_null($f_identifier) || empty($f_identifier->getValue()) );
 
-    $f2 = $fields['email'];
-    $f2_valid = (!is_null($f2) && !empty($f2->getValue()));
+    $f_email = $fields['email'];
+//    $f_email_valid = (!is_null($f_email) && !empty($f_email->getValue()));
+//    $f_email_invalid = (is_null($f_email) || empty($f_email->getValue()));
 
     // Note: Name field had to be renamed to customer-name, as name field is
     // a Wordpress field that (presumably) relates to the name of either a link
@@ -915,14 +918,18 @@ function cp_paylink_action_pay()
     // May require an element of white / black listing on field names to avoid
     // this situation, particularly if caused by end users' inadvertent use of
     // special keywords.
-    $f3 = $fields['customer-name'];
-    $f3_valid = (!is_null($f3) && !empty($f3->getValue()));
+    $f_name = $fields['customer-name'];
+//    $f_name_valid = (!is_null($f_name) && !empty($f_name->getValue()));
+//    $f_name_invalid = (is_null($f_name) || empty($f_name->getValue()));
 
-    $f4 = $fields['amount'];
-    $f4_valid = (!is_null($f4) && !empty($f4->getValue()));
 
-    $f5 = $fields['accept-terms-and-conditions'];
-    $f5_valid = (!is_null($f5) && $f5->isChecked());
+    $f_amount = $fields['amount'];
+//    $f_amount_valid = (!is_null($f_amount) && !empty($f_amount->getValue()));
+//    $f_amount_invalid = (is_null($f_amount) || empty($f_amount->getValue()));
+
+    $f_tnc = $fields['accept-terms-and-conditions'];
+//    $f_tnc_valid = (!is_null($f_tnc) && $f_tnc->isChecked());
+    $f_tnc_invalid = (is_null($f_tnc) || !$f_tnc->isChecked());
 
     $fN_valid = true;
     foreach ($fields as $key => $field) {
@@ -931,9 +938,27 @@ function cp_paylink_action_pay()
         }
     }
 
-    if (!$f1_valid || !$f2_valid || !$f3_valid || !$f4_valid || !$f5_valid || !$fN_valid) {
+    $fields_have_error = false;
+    foreach ($fields as $key => $field) {
+        if ($field instanceof cp_paylink_text_field) {
+
+            if ($fields_have_error == false)
+                $fields_have_error = ($field->getErrorMessage() != '');
+//            echo "<li>".trim($field->getErrorMessage())." - ".(int)$fields_have_error."</li>";
+        }
+    }
+
+
+//    echo "<br/> - ident: ".$f_identifier_invalid."<br/> - email:".$f_email_invalid."<br/> - name:".$f_name_invalid."<br/> - amount:".$f_amount_invalid."<br/> - tnc: ".$f_tnc_invalid."<br/> - fN:".!$fN_valid."<hr/>";
+//    echo "<b>F: E: " . (int)$fields_have_error . "</b><br/>";
+
+    if ($fields_have_error || $f_tnc_invalid) {
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
     }
+
+//    if ($f_identifier_invalid || $f_email_invalid || $f_name_invalid || $f_amount_invalid || $f_tnc_invalid || !$fN_valid) {
+//        return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
+//    }
 
     if (get_option('permalink_structure')) {
         $current_url = get_permalink($page_id);
@@ -948,8 +973,8 @@ function cp_paylink_action_pay()
     $logger = new CityPay_Logger(__FILE__);
     $paylink = new CityPay_PayLink_WP($logger);
 
-    $identifier = $f1->getValue();
-    $amount = $f4->getAmount();
+    $identifier = $f_identifier->getValue();
+    $amount = $f_amount->getAmount();
     $paylink->setRequestCart(
         $merchant_id,
         $licence_key,
@@ -959,10 +984,10 @@ function cp_paylink_action_pay()
         ''
     );
 
-    $email = $f2->getValue();
+    $email = $f_email->getValue();
     $paylink->setRequestAddress(
-        $f3->first_name,
-        $f3->last_name,
+        $f_name->first_name,
+        $f_name->last_name,
         '', '', '', '', '', '',
         $email,
         ''
@@ -1008,6 +1033,7 @@ function cp_paylink_action_pay()
         wp_redirect($url);
         exit;
     } catch (Exception $e) {
+//        echo $e;
         return CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR;
     }
 }
@@ -1088,6 +1114,9 @@ function cp_paylink_template_redirect_on_redirect_success()
 function cp_paylink_make_payment()
 {
     $r = cp_paylink_action_pay();
+
+//    echo $r . CP_PAYLINK_NO_ERROR;
+
     if ($r == CP_PAYLINK_NO_ERROR) {
         return;
     }
