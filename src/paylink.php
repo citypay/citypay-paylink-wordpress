@@ -458,10 +458,10 @@ class cp_paylink_email_field extends cp_paylink_text_field
         if (!parent::parse($value_in)) {
             return false;
         }
-        if (strlen(parent::getValue()) == 0x00) {
+        if (strlen(trim(parent::getValue())) == 0x00) {
             $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING;
             return false;
-        } else if (!CityPay_Validation::validateEmailAddress(parent::getValue())) {
+        } else if (!CityPay_Validation::validateEmailAddress(trim(parent::getValue()))) {
             $this->error = CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID;
             return false;
         }
@@ -989,7 +989,7 @@ function cp_paylink_action_pay()
         $f_name->first_name,
         $f_name->last_name,
         '', '', '', '', '', '',
-        $email,
+        trim($email),
         ''
     );
 
