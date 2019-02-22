@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.1.4
+ * Version: 1.1.5
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -91,12 +91,15 @@ $cp_paylink_default_error_messages = array(
     => __('You must accept the terms and conditions to use this service.')
 );
 
+global $redirect_success_url;
+global $redirect_failure_url;
+
+
 define('CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR', 0x05);
 define('CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR', 0x06);
 
 function cp_paylink_install()
 {
-
     $current_version = get_option(CP_PAYLINK_OPT_VERSION);
     switch ($current_version) {
         case "1.1.1":
@@ -883,9 +886,9 @@ function cp_paylink_action_pay()
     add_shortcode('citypay-payform-field', 'cp_paylink_payform_field');
     add_shortcode('citypay-payform-on-error', 'cp_paylink_shortcode_sink');
     add_shortcode('citypay-payform-on-page-load', 'cp_paylink_shortcode_sink');
-    add_shortcode('citypay-payform-on-redirect-success', 'cp_paylink_shortcode_sink');
-    add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
-    add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
+    add_shortcode('citypay-payform-on-redirect-success', 'redirect_url_success');
+    add_shortcode('citypay-payform-on-redirect-failure', 'redirect_url_failure');
+    add_shortcode('citypay-payform-on-redirect-cancel', 'redirect_url_cancel');
     add_shortcode('citypay-payform', 'cp_paylink_shortcode_sink');
 
     do_shortcode($page_post->post_content);
@@ -967,8 +970,9 @@ function cp_paylink_action_pay()
     }
 
     $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
-    $success_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'success', $current_url);
-    $failure_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', $current_url);
+    $success_url = get_option('$redirect_success_url');
+    $failure_url = get_option('$redirect_failure_url');
+
 
     $logger = new CityPay_Logger(__FILE__);
     $paylink = new CityPay_PayLink_WP($logger);
@@ -1036,6 +1040,40 @@ function cp_paylink_action_pay()
 //        echo $e;
         return CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR;
     }
+}
+
+function redirect_url_success($atts)
+{
+    $url = shortcode_atts(
+        array(
+            'url' => add_query_arg(CP_PAYLINK_DISPATCHER, 'success', get_permalink(get_query_var('page_id'))),
+        ),
+        $atts
+    );
+//    extract(shortcode_atts(array(
+//        'url' => add_query_arg(CP_PAYLINK_DISPATCHER, 'success', get_permalink(get_query_var('page_id'))),
+//    ), $atts));
+
+    update_option('$redirect_success_url', $url['url']);
+
+
+    return '';
+}
+
+function redirect_url_failure($atts)
+{
+    $url = shortcode_atts(
+        array(
+            'url' => add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', get_permalink(get_query_var('page_id'))),
+        ),
+        $atts
+    );
+//    extract(shortcode_atts(array(
+//        'url' => add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', get_permalink(get_query_var('page_id'))),
+//    ), $atts));
+
+    update_option('$redirect_failure_url', $url['url']);
+    return '';
 }
 
 function cp_paylink_init()
@@ -1160,6 +1198,7 @@ function cp_paylink_make_payment()
 
 function cp_paylink_template_redirect_dispatcher()
 {
+
     if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
         $action = $_GET[CP_PAYLINK_DISPATCHER];
         switch ($action) {
