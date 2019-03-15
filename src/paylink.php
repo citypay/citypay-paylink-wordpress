@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.1.5
+ * Version: 1.1.6
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -33,7 +33,7 @@ define('CP_PAYLINK_ENABLE_DEBUG_MODE', 'cp_paylink_enable_debug_mode');
 define('CP_PAYLINK_OPT_VERSION', 'cp_paylink_version');
 
 define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
-define('CP_PAYLINK_IDENTIFIER_REGEX', '/[A-Za-z0-9]{5,}/');
+define('CP_PAYLINK_IDENTIFIER_REGEX', '/^[^\s]{5,}$/');
 
 define('CP_PAYLINK_NO_ERROR', 0x00);
 
@@ -483,7 +483,10 @@ class cp_paylink_identifier_field extends cp_paylink_text_field
             $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING;
             return false;
         } else {
-            if (preg_match(CP_PAYLINK_IDENTIFIER_REGEX, get_option(CP_PAYLINK_IDENTIFIER_PREFIX) . parent::getValue())) {
+
+            if (preg_match_all(CP_PAYLINK_IDENTIFIER_REGEX, get_option(CP_PAYLINK_IDENTIFIER_PREFIX) . parent::getValue()) &&
+                mb_strlen(get_option(CP_PAYLINK_IDENTIFIER_PREFIX) . parent::getValue()) > 4 &&
+                mb_strlen(get_option(CP_PAYLINK_IDENTIFIER_PREFIX) . parent::getValue()) < 51) {
                 return true;
             } else {
                 $this->error = CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID;
