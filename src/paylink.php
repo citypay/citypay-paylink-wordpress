@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.1.6
+ * Version: 1.1.7
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -20,7 +20,7 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
-define('CP_PAYLINK_VERSION', '1.1.1');
+define('CP_PAYLINK_VERSION', '1.1.7');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
@@ -32,7 +32,7 @@ define('CP_PAYLINK_ENABLE_DEBUG_MODE', 'cp_paylink_enable_debug_mode');
 
 define('CP_PAYLINK_OPT_VERSION', 'cp_paylink_version');
 
-define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
+define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w\-]+)\b\s+\b(\b\w\b)?\s*([\w\-\s]+?)\s*$/i');
 define('CP_PAYLINK_IDENTIFIER_REGEX', '/^[^\s]{5,}$/');
 
 define('CP_PAYLINK_NO_ERROR', 0x00);
@@ -440,6 +440,7 @@ class cp_paylink_customer_name_field extends cp_paylink_text_field
             return false;
         } else {
             $matches = array();
+
             if (preg_match(CP_PAYLINK_NAME_REGEX, parent::getValue(), $matches)) {
                 $this->salutation = $matches[1];
                 $this->first_name = $matches[2];
