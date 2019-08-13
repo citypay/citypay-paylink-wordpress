@@ -32,7 +32,7 @@ define('CP_PAYLINK_ENABLE_DEBUG_MODE', 'cp_paylink_enable_debug_mode');
 
 define('CP_PAYLINK_OPT_VERSION', 'cp_paylink_version');
 
-define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w\-]+)\b\s+\b(\b\w\b)?\s*([\w-\s]+?)\s*$/i');
+define('CP_PAYLINK_NAME_REGEX', '/^\s*\b(?:(Mr|Mrs|Miss|Dr)\b\.?+)?+\s*\b([\w\-]+)\b\s+\b(\b\w\b)?\s*([\w\-\s]+?)\s*$/i');
 define('CP_PAYLINK_IDENTIFIER_REGEX', '/^[^\s]{5,}$/');
 
 define('CP_PAYLINK_NO_ERROR', 0x00);
