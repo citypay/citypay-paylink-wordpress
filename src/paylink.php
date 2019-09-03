@@ -1588,28 +1588,18 @@ function cp_paylink_exempt_shortcodes_from_texturize($shortcodes)
     return $shortcodes;
 }
 
-function cp_paylink_standalone_button($attrs)
-{
-    $a = shortcode_atts(
-        array(
-            'label' => 'Pay with CityPay',
-            'amount' => 0,
-            'identifier' => 'Identifier',
-            'description' => 'Product Description',
-        ),
-        $attrs
-    );
-
+function checkBtnSubmit($amount, $identifier, $description){
     //handle form submit
     if (isset($_POST['identifier']) && !isset($_POST['amount'])) {
-        if ($_POST['identifier'] === $a['identifier']) {
-            cp_paylink_create_token($a['amount'], $a['identifier'], $a['description']);
+        if ($_POST['identifier'] === $identifier) {
+            cp_paylink_create_token($amount, $identifier, $description);
         }
     }
+}
 
-    //handle transaction response
+function checkBtnTransResponse($identifier){
     if (isset($_GET['payment-result']) && isset($_POST['identifier'])) {
-        if ($_GET['payment-result'] === 'success' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
+        if ($_GET['payment-result'] === 'success' && substr($_POST['identifier'], 0,-13) === $identifier) {
             ?>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
             <script>
@@ -1621,7 +1611,7 @@ function cp_paylink_standalone_button($attrs)
             </script>
             <?php
 
-        } else if ($_GET['payment-result'] === 'failed' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
+        } else if ($_GET['payment-result'] === 'failed' && substr($_POST['identifier'], 0,-13) === $identifier) {
             ?>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
             <script>
@@ -1634,10 +1624,64 @@ function cp_paylink_standalone_button($attrs)
             <?php
         }
     }
+}
+
+function cp_paylink_standalone_button($attrs)
+{
+    $a = shortcode_atts(
+        array(
+            'label' => 'Pay with CityPay',
+            'amount' => 0,
+            'identifier' => 'Identifier',
+            'description' => 'Product Description',
+        ),
+        $attrs
+    );
+    $amount = $a['amount'];
+    $identifier = $a['identifier'];
+    $description = $a['description'];
+
+    //handle form submit
+    checkBtnSubmit($amount, $identifier, $description);
+
+    checkBtnTransResponse($identifier);
+//    if (isset($_POST['identifier']) && !isset($_POST['amount'])) {
+//        if ($_POST['identifier'] === $a['identifier']) {
+//            cp_paylink_create_token($a['amount'], $a['identifier'], $a['description']);
+//        }
+//    }
+
+    //handle transaction response
+//    if (isset($_GET['payment-result']) && isset($_POST['identifier'])) {
+//        if ($_GET['payment-result'] === 'success' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
+//            ?>
+<!--            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>-->
+<!--            <script>-->
+<!--                Swal.fire({-->
+<!--                    title: 'Payment Successful!',-->
+<!--                    type: 'success',-->
+<!--                    confirmButtonText: 'Ok'-->
+<!--                })-->
+<!--            </script>-->
+<!--            --><?php
+//
+//        } else if ($_GET['payment-result'] === 'failed' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
+//            ?>
+<!--            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>-->
+<!--            <script>-->
+<!--                Swal.fire({-->
+<!--                    title: 'Payment Failed!',-->
+<!--                    type: 'error',-->
+<!--                    confirmButtonText: 'Ok'-->
+<!--                })-->
+<!--            </script>-->
+<!--            --><?php
+//        }
+//    }
 
     //form displayed from shortcode
     $sc_output= '<form action="" method="post">'
-        . '<input type="hidden" name="identifier" value= ' . $a["identifier"] . ' />'
+        . '<input type="hidden" name="identifier" value= ' . $identifier . ' />'
         . '<button type="submit" class="uk-button uk-button-primary uk-button-large">'
         . $attrs['label']
         . '</button>'
