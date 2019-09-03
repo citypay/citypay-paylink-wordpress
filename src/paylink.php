@@ -1645,39 +1645,6 @@ function cp_paylink_standalone_button($attrs)
     checkBtnSubmit($amount, $identifier, $description);
 
     checkBtnTransResponse($identifier);
-//    if (isset($_POST['identifier']) && !isset($_POST['amount'])) {
-//        if ($_POST['identifier'] === $a['identifier']) {
-//            cp_paylink_create_token($a['amount'], $a['identifier'], $a['description']);
-//        }
-//    }
-
-    //handle transaction response
-//    if (isset($_GET['payment-result']) && isset($_POST['identifier'])) {
-//        if ($_GET['payment-result'] === 'success' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
-//            ?>
-<!--            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>-->
-<!--            <script>-->
-<!--                Swal.fire({-->
-<!--                    title: 'Payment Successful!',-->
-<!--                    type: 'success',-->
-<!--                    confirmButtonText: 'Ok'-->
-<!--                })-->
-<!--            </script>-->
-<!--            --><?php
-//
-//        } else if ($_GET['payment-result'] === 'failed' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
-//            ?>
-<!--            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>-->
-<!--            <script>-->
-<!--                Swal.fire({-->
-<!--                    title: 'Payment Failed!',-->
-<!--                    type: 'error',-->
-<!--                    confirmButtonText: 'Ok'-->
-<!--                })-->
-<!--            </script>-->
-<!--            --><?php
-//        }
-//    }
 
     //form displayed from shortcode
     $sc_output= '<form action="" method="post">'
