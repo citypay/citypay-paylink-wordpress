@@ -1588,7 +1588,7 @@ function cp_paylink_exempt_shortcodes_from_texturize($shortcodes)
     return $shortcodes;
 }
 
-function cp_paylink_standalone_button($attrs, $content = null)
+function cp_paylink_standalone_button($attrs)
 {
     $a = shortcode_atts(
         array(
@@ -1600,20 +1600,21 @@ function cp_paylink_standalone_button($attrs, $content = null)
         $attrs
     );
 
+    //handle form submit
     if (isset($_POST['identifier']) && !isset($_POST['amount'])) {
         if ($_POST['identifier'] === $a['identifier']) {
-//            echo $_POST['amount'] . ' - ' . $a['amount'];
             cp_paylink_create_token($a['amount'], $a['identifier'], $a['description']);
         }
     }
-    if (isset($_GET['payment-result']) && isset($_POST['identifier'])) {
 
+    //handle transaction response
+    if (isset($_GET['payment-result']) && isset($_POST['identifier'])) {
         if ($_GET['payment-result'] === 'success' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
             ?>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
             <script>
                 Swal.fire({
-                    title: 'Success!',
+                    title: 'Payment Successful!',
                     type: 'success',
                     confirmButtonText: 'Ok'
                 })
@@ -1634,17 +1635,15 @@ function cp_paylink_standalone_button($attrs, $content = null)
         }
     }
 
-//    $current_url = get_permalink();
-
-
-    $s = '<form action="" method="post">'
+    //form displayed from shortcode
+    $sc_output= '<form action="" method="post">'
         . '<input type="hidden" name="identifier" value= ' . $a["identifier"] . ' />'
         . '<button type="submit" class="uk-button uk-button-primary uk-button-large">'
         . $attrs['label']
         . '</button>'
         . '</form>';
 
-    return $s;
+    return $sc_output;
 
 }
 
@@ -1731,10 +1730,10 @@ function cp_paylink_create_token($amount, $identifier, $description)
     try {
         $url = $paylink->getPaylinkURL();
         wp_redirect($url);
-        exit();
+        exit;
     } catch (Exception $e) {
-        echo $e;
-        exit();
+//        echo $e;
+        exit;
     }
 }
 
