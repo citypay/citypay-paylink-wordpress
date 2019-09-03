@@ -24,6 +24,9 @@ references, amounts payable thereunder or any external database able
 to receive notification of successful and failed payment transactions; and
  * maintenance of any records of payments or payment attempts that can be
 accessed from the Wordpress console.
+ * v1.2.0 introduces NEW standalone payment button that allows users to 
+ set up a quick payment button with a specified amount to generate a 
+ payment token and allow customers perform a payment.
 
 ## Installation
 
@@ -378,6 +381,27 @@ any difficulties you may experience accepting payments using the CityPay
 Paylink service.
 
 The location of the log file is provided on the plugin settings form.
+
+## Standalone Payment Button
+
+`[citypay-pay-btn]`: Adds a button to the page that generates and 
+redirects the user to a paylink payment page with the amount, identifier 
+and description provided in the button attributes. 
+
+`label`: Label to be presented on the button
+
+`amount`: The amount to be charged to the customer. 
+
+Note: This amount is in the lowest
+currency value, i.e 1050 = £10,50
+
+`identifier`: A unique identifier for each button appended to a UUID value to be defined as the transaction Identifier.
+
+`description`: Adds a custom paramater to the transaction with the product description.
+
+### Example:
+    [citypay-pay-btn label="Pay with CityPay" amount="1050" identifier="Product123" description="Product description"]
+
 
 ## Frequently Asked Questions
 
