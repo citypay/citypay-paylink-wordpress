@@ -135,7 +135,7 @@ class CityPay_Pattern_Parser {
                     $_operand .= $c;
                 } else if ($c == ' ' || $c == '\t'
                     || $c == '\r' || $c == '\t'
-                    || strpos($delimiters, $c) !== false)  {
+                    || strpos($delimiters, (string)$c) !== false)  {
                     break;
                 } else {
                     // TODO: check desired behaviour on finding an inappropriate character
@@ -161,7 +161,7 @@ class CityPay_Pattern_Parser {
         }
 
         $c = $pattern[$i];
-        if (strpos($delimiters_begin, $c) === false) {
+        if (strpos($delimiters_begin, (string)$c) === false) {
             return self::INVALID_INPUT;
         }
         
@@ -204,7 +204,7 @@ class CityPay_Pattern_Parser {
             }
             
             $c = $pattern[$i];
-            if (strpos($delimiters_int, $c) !== false) {
+            if (strpos($delimiters_int, (string)$c) !== false) {
                 // TODO: check desired behaviour on finding an inappropriate delimiter
                 // for an argument - return error code, or raise an exception.
                 $r = self::_purgeWhitespace($pattern, ++$i, $i_max);
@@ -213,7 +213,7 @@ class CityPay_Pattern_Parser {
                 }
                         
                 $c = $pattern[$i];
-            } elseif (strpos($delimiters_end, $c) !== false) {
+            } elseif (strpos($delimiters_end, (string)$c) !== false) {
                 $i++;
                 if (sizeof($_operands) > 0x00) {
                     $operands = $_operands;
@@ -470,7 +470,7 @@ class CityPay_Pattern_Parser {
         }
     
         $c = $pattern[$i];
-        if (strpos($delimiter_begin, $c) === false) {
+        if (strpos($delimiter_begin, (string)$c) === false) {
             return self::INVALID_INPUT;
         }
 
@@ -507,7 +507,7 @@ class CityPay_Pattern_Parser {
         }
         
         $c = $pattern[$i];
-        if (strpos($delimiter_end, $c) !== false) {
+        if (strpos($delimiter_end, (string)$c) !== false) {
             $expression = self::_createNewPatternToken($type, $arguments);
             return true;
         }
@@ -518,7 +518,7 @@ class CityPay_Pattern_Parser {
         }
         
         $c = $pattern[$i];
-        if (strpos($delimiter_end, $c) !== false) {
+        if (strpos($delimiter_end, (string)$c) !== false) {
             $i++;
             $expression = self::_createNewPatternToken($type, $arguments, $conditions);
             return self::NO_ERROR;
