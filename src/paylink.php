@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.2.1
+ * Version: 1.1.6
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -440,7 +440,6 @@ class cp_paylink_customer_name_field extends cp_paylink_text_field
             return false;
         } else {
             $matches = array();
-
             if (preg_match(CP_PAYLINK_NAME_REGEX, parent::getValue(), $matches)) {
                 $this->salutation = $matches[1];
                 $this->first_name = $matches[2];
@@ -960,6 +959,7 @@ function cp_paylink_action_pay()
         }
     }
 
+
 //    echo "<br/> - ident: ".$f_identifier_invalid."<br/> - email:".$f_email_invalid."<br/> - name:".$f_name_invalid."<br/> - amount:".$f_amount_invalid."<br/> - tnc: ".$f_tnc_invalid."<br/> - fN:".!$fN_valid."<hr/>";
 //    echo "<b>F: E: " . (int)$fields_have_error . "</b><br/>";
 
@@ -1108,12 +1108,10 @@ function cp_paylink_init()
         add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
-        add_shortcode('citypay-pay-btn', 'cp_paylink_standalone_button');
         add_action('admin_menu', 'cp_paylink_administration');
         //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'cp_paylink_settings_link');
     }
-
 }
 
 function cp_paylink_wp_loaded()
@@ -1645,39 +1643,6 @@ function cp_paylink_standalone_button($attrs)
     checkBtnSubmit($amount, $identifier, $description);
 
     checkBtnTransResponse($identifier);
-//    if (isset($_POST['identifier']) && !isset($_POST['amount'])) {
-//        if ($_POST['identifier'] === $a['identifier']) {
-//            cp_paylink_create_token($a['amount'], $a['identifier'], $a['description']);
-//        }
-//    }
-
-    //handle transaction response
-//    if (isset($_GET['payment-result']) && isset($_POST['identifier'])) {
-//        if ($_GET['payment-result'] === 'success' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
-//            ?>
-<!--            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>-->
-<!--            <script>-->
-<!--                Swal.fire({-->
-<!--                    title: 'Payment Successful!',-->
-<!--                    type: 'success',-->
-<!--                    confirmButtonText: 'Ok'-->
-<!--                })-->
-<!--            </script>-->
-<!--            --><?php
-//
-//        } else if ($_GET['payment-result'] === 'failed' && substr($_POST['identifier'], 0,-13) === $a['identifier']) {
-//            ?>
-<!--            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>-->
-<!--            <script>-->
-<!--                Swal.fire({-->
-<!--                    title: 'Payment Failed!',-->
-<!--                    type: 'error',-->
-<!--                    confirmButtonText: 'Ok'-->
-<!--                })-->
-<!--            </script>-->
-<!--            --><?php
-//        }
-//    }
 
     //form displayed from shortcode
     $sc_output= '<form action="" method="post">'
