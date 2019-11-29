@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -20,7 +20,7 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
-define('CP_PAYLINK_VERSION', '1.2.0');
+define('CP_PAYLINK_VERSION', '1.2.1');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
@@ -440,7 +440,6 @@ class cp_paylink_customer_name_field extends cp_paylink_text_field
             return false;
         } else {
             $matches = array();
-
             if (preg_match(CP_PAYLINK_NAME_REGEX, parent::getValue(), $matches)) {
                 $this->salutation = $matches[1];
                 $this->first_name = $matches[2];
@@ -960,6 +959,7 @@ function cp_paylink_action_pay()
         }
     }
 
+
 //    echo "<br/> - ident: ".$f_identifier_invalid."<br/> - email:".$f_email_invalid."<br/> - name:".$f_name_invalid."<br/> - amount:".$f_amount_invalid."<br/> - tnc: ".$f_tnc_invalid."<br/> - fN:".!$fN_valid."<hr/>";
 //    echo "<b>F: E: " . (int)$fields_have_error . "</b><br/>";
 
@@ -1108,12 +1108,10 @@ function cp_paylink_init()
         add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
-        add_shortcode('citypay-pay-btn', 'cp_paylink_standalone_button');
         add_action('admin_menu', 'cp_paylink_administration');
         //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'cp_paylink_settings_link');
     }
-
 }
 
 function cp_paylink_wp_loaded()

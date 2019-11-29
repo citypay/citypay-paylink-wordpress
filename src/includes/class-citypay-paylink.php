@@ -190,6 +190,7 @@ class CityPay_PayLink_WP {
         $curl_opts[CURLOPT_STDERR] = $curl_stderr;
 		$ch = curl_init('https://secure.citypay.com/paylink3/create');
 		curl_setopt_array($ch, $curl_opts);
+		curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
         $response = curl_exec($ch);
         if (empty($response))
         {
