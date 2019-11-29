@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.1.6
+ * Version: 1.2.1
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
