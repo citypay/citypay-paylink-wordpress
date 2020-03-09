@@ -3,7 +3,7 @@ Contributors: _citypay_to_be_confirmed_
 Tags: ecommerce, e-commerce, payment gateway
 Donate link: http://citypay.com/
 Requires at least: 4.0
-Tested up to: 4.4
+Tested up to: 5.3
 Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
