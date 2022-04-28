@@ -3,7 +3,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.2.1
+ * Version: 1.2.3
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -20,7 +20,7 @@ if (file_exists('customer/overrides.php')) {
     require_once('customer/overrides.php');
 }
 
-define('CP_PAYLINK_VERSION', '1.2.1');
+define('CP_PAYLINK_VERSION', '1.2.3');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
@@ -1108,6 +1108,7 @@ function cp_paylink_init()
         add_shortcode('citypay-payform-on-redirect-failure', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform-on-redirect-cancel', 'cp_paylink_shortcode_sink');
         add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
+        add_shortcode('citypay-pay-btn', 'cp_paylink_standalone_button');
         add_action('admin_menu', 'cp_paylink_administration');
         //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'cp_paylink_settings_link');
@@ -1136,7 +1137,6 @@ function cp_paylink_template_redirect_on_redirect_failure()
     add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
     add_shortcode('citypay-pay-btn', 'cp_paylink_standalone_button');
 
-
     do_shortcode($page_post->post_content);
 }
 
@@ -1164,8 +1164,13 @@ function cp_paylink_template_redirect_on_redirect_success()
     add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
     add_shortcode('citypay-pay-btn', 'cp_paylink_standalone_button');
 
-
     do_shortcode($page_post->post_content);
+}
+
+function cp_paylink_action_pay_btn() {
+    if (isset($_POST['identifier']) && isset($_POST['amount']) && isset($_POST['description'])) {
+        cp_paylink_create_token($_POST['amount'], $_POST['identifier'], $_POST['description']);
+    }
 }
 
 function cp_paylink_make_payment()
@@ -1640,13 +1645,18 @@ function cp_paylink_standalone_button($attrs)
     $description = $a['description'];
 
     //handle form submit
-    checkBtnSubmit($amount, $identifier, $description);
+    //checkBtnSubmit($amount, $identifier, $description);
 
-    checkBtnTransResponse($identifier);
+    //checkBtnTransResponse($identifier);
+
+    $current_url = get_permalink();
+    $form_action = add_query_arg('cp_paylink', 'pay_btn', $current_url);
 
     //form displayed from shortcode
-    $sc_output= '<form action="" method="post">'
+    $sc_output= '<form action="'.$form_action.'" method="post">'
+        . '<input type="hidden" name="amount" value= ' . $amount . ' />'
         . '<input type="hidden" name="identifier" value= ' . $identifier . ' />'
+        . '<input type="hidden" name="description" value= ' . $description . ' />'
         . '<button type="submit" class="uk-button uk-button-primary uk-button-large">'
         . $attrs['label']
         . '</button>'
