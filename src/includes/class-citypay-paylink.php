@@ -85,7 +85,6 @@ class CityPay_PayLink_WP {
 			'cardholder'	=> array(
 				'firstName'	=> trim($fname),
 				'lastName'	=> trim($lname),
-				'email'		=> trim($email),
 				'address'	=> array (
 					'address1'	=> trim($addr1),
 					'address2'	=> trim($addr2),
@@ -93,6 +92,9 @@ class CityPay_PayLink_WP {
 					'area'		=> trim($area),
 					'postcode'	=> trim($zip),
 					'country'	=> trim(strtoupper($country)))));
+        if(!empty($email)) {
+            $this->request_addr['cardholder']['email'] = trim($email);
+        }
 	}
 
 	public function setRequestCart($mid,$key,$prefix,$cart_id,$price,$cart_desc) {
