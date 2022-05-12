@@ -357,6 +357,26 @@ Example:
         You have specified an amount that more than that the practice is able to accept.
     [/error-message]
 
+## Standalone Payment Button
+
+`[citypay-pay-btn]`: Adds a button to the page that generates and
+redirects the user to a paylink payment page with the amount, identifier
+and description provided in the button attributes.
+
+`label`: Label to be presented on the button
+
+`amount`: The amount to be charged to the customer.
+
+Note: This amount is in the lowest
+currency value, i.e 1050 = £10,50
+
+`identifier`: A unique identifier for each button appended to a UUID value to be defined as the transaction Identifier.
+
+`description`: Adds a custom paramater to the transaction with the product description.
+
+### Example:
+    [citypay-pay-btn label="Pay with CityPay" amount="1050" identifier="Product123" description="Product description"]
+
 ## Processing test transactions
 
 To test the operation of an e-commerce solution based on WooCommerce in
@@ -370,6 +390,59 @@ To process live transactions for settlement by the upstream acquirer, the
 check box labeled Test Mode referenced in the paragraph above must be
 unticked.
 
+## Postback
+
+The postback field in the plugin settings form, specifies a URL which is used by the Paylink service to inform the Merchant Application of the outcome of the transaction. This URL must be a valid URL which is accessible by the Paylink service.
+
+####  No postback url specified:
+If no postback url is specified, a postback url `https://your-website/your-payment-page/?cp_paylink=postback` will be set. The plugin will 
+handle the postback and save the response in the plugin log file. 
+
+If you need to handle the postback data, you will need to override 
+the plugin function `cp_paylink_template_redirect_dispatcher()`. This can be done in the template `functions.php` file.
+
+#### Example:
+
+```
+// template functions.php file
+...
+
+// responsible to override the action 'template_redirect'
+add_action('template_redirect', 'overridden_cp_paylink_template_redirect_dispatcher');
+
+function overridden_cp_paylink_template_redirect_dispatcher() {
+    if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
+        $action = $_GET[CP_PAYLINK_DISPATCHER];
+        switch ($action) {
+            case 'pay':
+                cp_paylink_make_payment();
+                break;
+
+            case 'pay_btn':
+                cp_paylink_action_pay_btn();
+                break;
+
+            case 'postback':
+                overridden_cp_paylink_template_redirect_on_postback(); // <---- add your override logic 
+                break;
+
+            case 'success':
+                cp_paylink_template_redirect_on_redirect_success();
+                break;
+
+            case 'failure':
+                cp_paylink_template_redirect_on_redirect_failure();
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+
+...
+```
+
 ## Enabling logging
 
 The interaction between WordPress, WooCommerce and the CityPay Paylink
@@ -381,26 +454,6 @@ any difficulties you may experience accepting payments using the CityPay
 Paylink service.
 
 The location of the log file is provided on the plugin settings form.
-
-## Standalone Payment Button
-
-`[citypay-pay-btn]`: Adds a button to the page that generates and 
-redirects the user to a paylink payment page with the amount, identifier 
-and description provided in the button attributes. 
-
-`label`: Label to be presented on the button
-
-`amount`: The amount to be charged to the customer. 
-
-Note: This amount is in the lowest
-currency value, i.e 1050 = £10,50
-
-`identifier`: A unique identifier for each button appended to a UUID value to be defined as the transaction Identifier.
-
-`description`: Adds a custom paramater to the transaction with the product description.
-
-### Example:
-    [citypay-pay-btn label="Pay with CityPay" amount="1050" identifier="Product123" description="Product description"]
 
 
 ## Frequently Asked Questions

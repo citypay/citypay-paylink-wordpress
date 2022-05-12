@@ -27,7 +27,7 @@ class CityPay_PayLink_WP {
 		}
 	}
 
-	private function debugLog($text) {
+	public function debugLog($text) {
 		if (method_exists($this->pay_module,'debugLog')) {
 			$this->pay_module->debugLog($text);
 		}
@@ -127,15 +127,7 @@ class CityPay_PayLink_WP {
 			'redirect_failure' => $return_failure_url)
 		);
         $this->request_config['config']['redirect_params'] = true;
-        $this->request_config['config']['postback_policy'] = 'none';
-//		if (empty($postback_url)) {
-//			$this->request_config['config']['redirect_params'] = true;
-//			$this->request_config['config']['postback_policy'] = 'none';
-//		} else {
-//			$this->request_config['config']['redirect_params'] = false;
-//			$this->request_config['config']['postback'] = $postback_url;
-//			$this->request_config['config']['postback_policy'] = 'sync';
-//		}
+        $this->request_config['config']['postback'] = $postback_url;
 	}
     
     public function setRequestConfigOption($option) {
@@ -252,7 +244,7 @@ class CityPay_PayLink_WP {
 		if (empty($postback_data)) {
 			return null;
 		}
-		$this->debugLog(print_r($postback_data,true));
+		// $this->debugLog(print_r($postback_data,true));
 		return $postback_data;
 	}
 
