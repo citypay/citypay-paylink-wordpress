@@ -1,9 +1,10 @@
 <?php
+
 /**
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.2.3
+ * Version: 1.2.5
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -15,16 +16,14 @@ require_once('includes/class-citypay-logger.php');
 require_once('includes/class-citypay-stack.php');
 require_once('includes/class-citypay-filter.php');
 require_once('includes/class-citypay-validation.php');
+require_once('includes/class-citypay-paylink.php');
 
-if (file_exists('customer/overrides.php')) {
-    require_once('customer/overrides.php');
-}
-
-define('CP_PAYLINK_VERSION', '1.2.3');
+define('CP_PAYLINK_VERSION', '1.2.5');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
 define('CP_PAYLINK_IDENTIFIER_PREFIX', 'cp_paylink_identifier_prefix');
+define('CP_PAYLINK_POSTBACK_URL', 'cp_paylink_postback_url');
 define('CP_PAYLINK_MERCHANT_EMAIL_ADDRESS', 'cp_paylink_merchant_email_address');
 define('CP_PAYLINK_ENABLE_MERCHANT_EMAIL', 'cp_paylink_enable_merchant_email');
 define('CP_PAYLINK_ENABLE_TEST_MODE', 'cp_paylink_enable_test_mode');
@@ -131,16 +130,6 @@ function cp_paylink_config_stack()
     return $cp_paylink_config_stack;
 }
 
-/*function cp_paylink_enqueue_styles() {
-    wp_enqueue_style('parent-style', get_template_directory_uri().'/style.css');
-    wp_enqueue_style('child-style', get_stylesheet_uri(), array('parent-style'));
-}*/
-
-/*function cp_paylink_enqueue_javascript() {
-    wp_enqueue_script('jquery', 'http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js');
-    wp_enqueue_script('paylink', 'https://secure.citypay.com/paylink3/js/paylink-api-1.0.0.min.js', array('jquery'));
-}*/
-
 function cp_paylink_send_cors_headers($headers)
 {
     error_log("send_cors_headers: " . $headers);
@@ -191,12 +180,6 @@ class cp_paylink_field
             ),
             $attrs
         );
-
-        /*echo '<pre>';
-        var_dump($a);
-        var_dump($attrs);
-        debug_print_backtrace();
-        echo '</pre>';*/
 
         $h = constant($a['handle']);
         if (!is_null($h)) {
@@ -689,7 +672,6 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null)
 function cp_paylink_shortcode_sink($attrs, $content = null)
 {
     if (!is_null($content)) {
-        //cp_paylink_config_stack()->push_new();
         do_shortcode($content);
     }
     return '';
@@ -910,36 +892,10 @@ function cp_paylink_action_pay()
     }
 
     $f_identifier = $fields['identifier'];
-//    $f_identifier_valid = (!is_null($f_identifier) && !empty($f_identifier->getValue()));
-//    $f_identifier_invalid = (is_null($f_identifier) || empty($f_identifier->getValue()) );
-
-
     $f_email = $fields['email'];
-//    $f_email_valid = (!is_null($f_email) && !empty($f_email->getValue()));
-//    $f_email_invalid = (is_null($f_email) || empty($f_email->getValue()));
-
-
-    // Note: Name field had to be renamed to customer-name, as name field is
-    // a Wordpress field that (presumably) relates to the name of either a link
-    // or a particular blog post (using the slug). Consequently, on entering
-    // text into the 'name' page, Wordpress was attempting to resolve the
-    // name in preference to the page identifier with the result that a page
-    // not found error / template page was being generated and output.
-    //
-    // May require an element of white / black listing on field names to avoid
-    // this situation, particularly if caused by end users' inadvertent use of
-    // special keywords.
     $f_name = $fields['customer-name'];
-//    $f_name_valid = (!is_null($f_name) && !empty($f_name->getValue()));
-//    $f_name_invalid = (is_null($f_name) || empty($f_name->getValue()));
-
-
     $f_amount = $fields['amount'];
-//    $f_amount_valid = (!is_null($f_amount) && !empty($f_amount->getValue()));
-//    $f_amount_invalid = (is_null($f_amount) || empty($f_amount->getValue()));
-
     $f_tnc = $fields['accept-terms-and-conditions'];
-//    $f_tnc_valid = (!is_null($f_tnc) && $f_tnc->isChecked());
     $f_tnc_invalid = (is_null($f_tnc) || !$f_tnc->isChecked());
 
     $fN_valid = true;
@@ -952,25 +908,14 @@ function cp_paylink_action_pay()
     $fields_have_error = false;
     foreach ($fields as $key => $field) {
         if ($field instanceof cp_paylink_text_field) {
-
             if ($fields_have_error == false)
                 $fields_have_error = ($field->getErrorMessage() != '');
-//            echo "<li>".trim($field->getErrorMessage())." - ".(int)$fields_have_error."</li>";
         }
     }
-
-
-//    echo "<br/> - ident: ".$f_identifier_invalid."<br/> - email:".$f_email_invalid."<br/> - name:".$f_name_invalid."<br/> - amount:".$f_amount_invalid."<br/> - tnc: ".$f_tnc_invalid."<br/> - fN:".!$fN_valid."<hr/>";
-//    echo "<b>F: E: " . (int)$fields_have_error . "</b><br/>";
 
     if ($fields_have_error || $f_tnc_invalid) {
         return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
     }
-
-
-//    if ($f_identifier_invalid || $f_email_invalid || $f_name_invalid || $f_amount_invalid || $f_tnc_invalid || !$fN_valid) {
-//        return CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR;
-//    }
 
     if (get_option('permalink_structure')) {
         $current_url = get_permalink($page_id);
@@ -978,8 +923,13 @@ function cp_paylink_action_pay()
         $current_url = add_query_arg('page_id', $page_id, get_home_url());
     }
 
+    $cp_pl_postback_url = get_option(CP_PAYLINK_POSTBACK_URL);
 
-    $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
+    if ($cp_pl_postback_url) {
+        $postback_url = $cp_pl_postback_url;
+    } else {
+        $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
+    }
 
     $success_url = get_option('$redirect_success_url');
 
@@ -1009,8 +959,6 @@ function cp_paylink_action_pay()
         trim($email),
         ''
     );
-
-    $plugin_data = get_file_data(__FILE__, array('Version'));
 
     $paylink->setRequestClient(
         'Wordpress',
@@ -1050,7 +998,6 @@ function cp_paylink_action_pay()
         wp_redirect($url);
         exit;
     } catch (Exception $e) {
-//        echo $e;
         return CP_PAYLINK_PROCESSING_ERROR_PAYLINK_ERROR;
     }
 }
@@ -1063,12 +1010,8 @@ function redirect_url_success($atts)
         ),
         $atts
     );
-//    extract(shortcode_atts(array(
-//        'url' => add_query_arg(CP_PAYLINK_DISPATCHER, 'success', get_permalink(get_query_var('page_id'))),
-//    ), $atts));
 
     update_option('$redirect_success_url', $url['url']);
-
 
     return '';
 }
@@ -1081,11 +1024,9 @@ function redirect_url_failure($atts)
         ),
         $atts
     );
-//    extract(shortcode_atts(array(
-//        'url' => add_query_arg(CP_PAYLINK_DISPATCHER, 'failure', get_permalink(get_query_var('page_id'))),
-//    ), $atts));
 
     update_option('$redirect_failure_url', $url['url']);
+
     return '';
 }
 
@@ -1110,7 +1051,6 @@ function cp_paylink_init()
         add_shortcode('citypay-payform', 'cp_paylink_shortcode_passthrough');
         add_shortcode('citypay-pay-btn', 'cp_paylink_standalone_button');
         add_action('admin_menu', 'cp_paylink_administration');
-        //add_filter('wp_headers', array('cp_paylinkjs_send_cors_headers'));
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'cp_paylink_settings_link');
     }
 }
@@ -1142,6 +1082,10 @@ function cp_paylink_template_redirect_on_redirect_failure()
 
 function cp_paylink_template_redirect_on_postback()
 {
+    $logger = new CityPay_Logger(__FILE__);
+    $paylink = new CityPay_PayLink_WP($logger);
+    $post_back_data = $paylink->getPostbackData();
+    $paylink->debugLog("Postback data ".print_r($post_back_data, true));
     ob_clean();
     header('HTTP/1.1 200 OK');
     exit;
@@ -1176,8 +1120,6 @@ function cp_paylink_action_pay_btn() {
 function cp_paylink_make_payment()
 {
     $r = cp_paylink_action_pay();
-
-//    echo $r . CP_PAYLINK_NO_ERROR;
 
     if ($r == CP_PAYLINK_NO_ERROR) {
         return;
@@ -1223,7 +1165,6 @@ function cp_paylink_make_payment()
 
 function cp_paylink_template_redirect_dispatcher()
 {
-
     if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
         $action = $_GET[CP_PAYLINK_DISPATCHER];
         switch ($action) {
@@ -1323,6 +1264,16 @@ function cp_paylink_settings_identifier_prefix()
         . "' value='${option}' size='20' placeholder='(optional)'></input>";
 }
 
+function cp_paylink_settings_postback_url()
+{
+    $option = get_option(CP_PAYLINK_POSTBACK_URL);
+    echo "<input type='text' id='"
+        . CP_PAYLINK_POSTBACK_URL
+        . "' name='"
+        . CP_PAYLINK_POSTBACK_URL
+        . "' value='${option}' size='60' placeholder='(optional)'></input>";
+}
+
 function cp_paylink_settings_enable_test_mode()
 {
     $option = get_option(CP_PAYLINK_ENABLE_TEST_MODE, true);
@@ -1385,6 +1336,23 @@ function cp_paylink_settings_validate_licence_key($input)
     }
 
     return apply_filters('cp_paylink_settings_validate_identifier_prefix', $output, $output);
+}
+
+function cp_paylink_settings_validate_postback_url($input)
+{
+    if (!CityPay_Validation::validatePostbackUrl($input)) {
+        $output = get_option(CP_PAYLINK_POSTBACK_URL);
+        add_settings_error(
+            'cp-paylink-settings',
+            'invalid-postback-url',
+            __('Invalid Postback URL', 'invalid-postback-url'),
+            'error'
+        );
+    } else {
+        $output = $input;
+    }
+
+    return apply_filters('cp_paylink_settings_validate_postback_url', $output, $output);
 }
 
 function cp_paylink_settings_validate_identifier_prefix($input)
@@ -1538,6 +1506,17 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
+        'postback-url',
+        'Postback URL',
+        'cp_paylink_settings_postback_url',
+        'cp-paylink-settings',
+        'main_section',
+        array(
+            'label_for' => 'Postback URL'
+        )
+    );
+
+    add_settings_field(
         'enable-test-mode',
         'Enable test mode',
         'cp_paylink_settings_enable_test_mode',
@@ -1562,6 +1541,7 @@ function cp_paylink_admin_init()
     register_setting('cp-paylink-settings', CP_PAYLINK_MERCHANT_ID, 'cp_paylink_settings_validate_merchant_id');
     register_setting('cp-paylink-settings', CP_PAYLINK_LICENCE_KEY, 'cp_paylink_settings_validate_licence_key');
     register_setting('cp-paylink-settings', CP_PAYLINK_IDENTIFIER_PREFIX, 'cp_paylink_settings_validate_identifier_prefix');
+    register_setting('cp-paylink-settings', CP_PAYLINK_POSTBACK_URL, 'cp_paylink_settings_validate_postback_url');
     register_setting('cp-paylink-settings', CP_PAYLINK_MERCHANT_EMAIL_ADDRESS, 'cp_paylink_settings_validate_merchant_email_address');
     register_setting('cp-paylink-settings', CP_PAYLINK_ENABLE_MERCHANT_EMAIL, 'cp_paylink_settings_validate_enable_merchant_email');
     register_setting('cp-paylink-settings', CP_PAYLINK_ENABLE_TEST_MODE, 'cp_paylink_settings_validate_enable_test_mode');
@@ -1591,43 +1571,6 @@ function cp_paylink_exempt_shortcodes_from_texturize($shortcodes)
     return $shortcodes;
 }
 
-function checkBtnSubmit($amount, $identifier, $description){
-    //handle form submit
-    if (isset($_POST['identifier']) && !isset($_POST['amount'])) {
-        if ($_POST['identifier'] === $identifier) {
-            cp_paylink_create_token($amount, $identifier, $description);
-        }
-    }
-}
-
-function checkBtnTransResponse($identifier){
-    if (isset($_GET['payment-result']) && isset($_POST['identifier'])) {
-        if ($_GET['payment-result'] === 'success' && substr($_POST['identifier'], 0,-13) === $identifier) {
-            ?>
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
-            <script>
-                Swal.fire({
-                    title: 'Payment Successful!',
-                    type: 'success',
-                    confirmButtonText: 'Ok'
-                })
-            </script>
-            <?php
-
-        } else if ($_GET['payment-result'] === 'failed' && substr($_POST['identifier'], 0,-13) === $identifier) {
-            ?>
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
-            <script>
-                Swal.fire({
-                    title: 'Payment Failed!',
-                    type: 'error',
-                    confirmButtonText: 'Ok'
-                })
-            </script>
-            <?php
-        }
-    }
-}
 
 function cp_paylink_standalone_button($attrs)
 {
@@ -1644,26 +1587,19 @@ function cp_paylink_standalone_button($attrs)
     $identifier = $a['identifier'];
     $description = $a['description'];
 
-    //handle form submit
-    //checkBtnSubmit($amount, $identifier, $description);
-
-    //checkBtnTransResponse($identifier);
-
     $current_url = get_permalink();
     $form_action = add_query_arg('cp_paylink', 'pay_btn', $current_url);
 
-    //form displayed from shortcode
     $sc_output= '<form action="'.$form_action.'" method="post">'
-        . '<input type="hidden" name="amount" value= ' . $amount . ' />'
-        . '<input type="hidden" name="identifier" value= ' . $identifier . ' />'
-        . '<input type="hidden" name="description" value= ' . $description . ' />'
+        . '<input type="hidden" name="amount" value= "' . $amount . '" />'
+        . '<input type="hidden" name="identifier" value= "' . $identifier . '" />'
+        . '<input type="hidden" name="description" value= "' . $description . '" />'
         . '<button type="submit" class="uk-button uk-button-primary uk-button-large">'
         . $attrs['label']
         . '</button>'
         . '</form>';
 
     return $sc_output;
-
 }
 
 function cp_paylink_create_token($amount, $identifier, $description)
@@ -1685,13 +1621,19 @@ function cp_paylink_create_token($amount, $identifier, $description)
         $current_url = add_query_arg('page_id', $page_id, get_home_url());
     }
 
-    $postback_url = null;
+    $cp_pl_postback_url = get_option(CP_PAYLINK_POSTBACK_URL);
+
+    if ($cp_pl_postback_url) {
+        $postback_url = $cp_pl_postback_url;
+    } else {
+        $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
+    }
+
     $success_url = $current_url . '?payment-result=success';
     $failure_url = $current_url . '?payment-result=failed';
 
     $logger = new CityPay_Logger(__FILE__);
     $paylink = new CityPay_PayLink_WP($logger);
-
 
     $paylink->setRequestCart(
         $merchant_id,
@@ -1713,7 +1655,7 @@ function cp_paylink_create_token($amount, $identifier, $description)
     $paylink->setRequestClient(
         'Wordpress',
         get_bloginfo('version', 'raw'),
-        'PayLink-PayForm',
+        'PayLink-Standalone-Button',
         CP_PAYLINK_VERSION
     );
 
@@ -1732,10 +1674,6 @@ function cp_paylink_create_token($amount, $identifier, $description)
             $paylink->setRequestConfigOption('BYPASS_MERCHANT_EMAIL');
         }
     }
-
-//    $paylink->setCustomParameter("Shipping Address", '', array('placeholder' => 'Address', 'fieldType' =>'text'));
-//    $paylink->setCustomParameter("Shipping Postcode", '', array('placeholder' => 'Postcode', 'fieldType' =>'text'));
-//    $paylink->setCustomParameter("Shipping Country", '', array('placeholder' => 'Country', 'fieldType' =>'text'));
 
     if ($description) {
         $paylink->setCustomParameter(

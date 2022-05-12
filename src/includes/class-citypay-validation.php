@@ -21,7 +21,12 @@ class CityPay_Validation {
         // TODO: implement proper validation test
         return 1;
     }
-    
+
+    public static function validatePostbackUrl($postback) {
+        // TODO: implement proper validation test
+        return 1;
+    }
+
     public static function validateCheckboxValue($value) {
         // TODO: implement proper validation test
         return 1;

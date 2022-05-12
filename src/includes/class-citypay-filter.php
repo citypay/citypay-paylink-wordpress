@@ -176,17 +176,7 @@ class CityPay_Filter {
                 break;
             }
         }
-
-        /*echo '<pre>';
-        var_dump(bin2hex($s));
-        var_dump($i_max);
-        var_dump($i);
-        var_dump($j);
-        var_dump(bin2hex(substr($s, $i, ($j - $i))));
-        var_dump(bin2hex(substr($s, 0, $j + 1)));
-        echo '</pre>';*/
-
-        return substr($s, $i, ($j - $i));
+        return substr($s, $i, (($j - $i) + 1));
     }
     
 }
