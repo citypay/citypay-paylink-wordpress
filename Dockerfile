@@ -12,7 +12,7 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
 	&& mv wp-cli.phar /usr/local/bin/wp \
 	&& wp --info
 
-ENV CITYPAY_PLUGIN_VERSION 1.2.6
+ENV CITYPAY_PLUGIN_VERSION 1.2.7
 
 COPY scripts/*.sh /usr/local/bin/
 

@@ -1,10 +1,10 @@
 === CityPay Paylink PayForm WP ===
-Contributors: _citypay_to_be_confirmed_
+Contributors: citypay
 Tags: ecommerce, e-commerce, payment gateway
 Donate link: http://citypay.com/
 Requires at least: 4.0
-Tested up to: 5.3
-Stable tag: 1.0.5
+Tested up to: 6.1
+Stable tag: 1.2.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -441,6 +441,10 @@ configuration file for PHP using the curl.cainfo configuration setting.
 
 
 == Changelog ==
+
+= 1.2.7 =
+
+* Updated tested up to for WordPress.
 
 = 1.2.6 =
 
