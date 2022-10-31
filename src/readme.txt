@@ -8,13 +8,13 @@ Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-CityPay Paylink PayForm WP is a plugin that supplements Wordpress with
+CityPay Paylink PayForm WP is a plugin that supplements WordPress with
 support for a form leading to payment processing using CityPay hosted payment
 forms.
 
 == Description ==
 
-CityPay Paylink PayForm WP is a plugin that supplements Wordpress with
+CityPay Paylink PayForm WP is a plugin that supplements WordPress with
 support for a form leading to payment processing using CityPay hosted payment
 forms.
 
@@ -28,7 +28,7 @@ identifier; the plugin does not at present provide or support -
 references, amounts payable thereunder or any external database able
 to receive notification of successful and failed payment transactions; and
  * maintenance of any records of payments or payment attempts that can be
-accessed from the Wordpress console.
+accessed from the WordPress console.
 
 == Installation ==
 
@@ -42,7 +42,7 @@ accessed from the Wordpress console.
 
 # Automatic installation
 
-To perform an automatic installation of the CityPay Paylink Wordpress plugin,
+To perform an automatic installation of the CityPay Paylink WordPress plugin,
 login to your WordPress dashboard, select the Plugins menu and click Add New.
 
 In the search field, type "CityPay" and click Search Plugins. Once you have
@@ -50,7 +50,7 @@ found our payment gateway plugin, it may be installed by clicking Install Now.
 
 # Manual installation
 
-The perform a manual installation of the CityPay Paylink Wordpress plugin,
+To perform a manual installation of the CityPay Paylink WordPress plugin,
 login to your WordPress dashboard, select the Plugins menu and click Add New. 
 
 Then select Upload Plugin, browse to the location of the ZIP file containing
@@ -61,18 +61,18 @@ Install Now.
 
 Once the plugin has been installed, you may need to activate it by selecting
 the Plugins menu, clicking Installed Plugins and then activating the plugin
-with the name "CityPay Wordpress Payments" by clicking on the link labeled
+with the name "CityPay WordPress Payments" by clicking on the link labeled
 Activate.
 
 The merchant account, the license key, the transaction currency and other
 information relating to the processing of transactions through the CityPay
 Paylink hosted form payment gateway may be configured by selecting the
-settings page which is accessed through the Wordpress plugins page.
+settings page which is accessed through the WordPress plugins page.
 
 After the settings for the plugin have been configured, they must be saved
 by clicking on the button labeled 'Save Changes' before they take effect.
 
-## Creating a page in Wordpress to accept payments
+## Creating a page in WordPress to accept payments
 
 To accept payments using the plugin, it is necessary to create and mark-up
 a static page containing the layout, fields, field names and custom error
@@ -125,7 +125,7 @@ messages as follows -
         [/citypay-payform-on-error]
     [/citypay-payform]
 
-The structure of the markup may be described briefly, in terms of Wordpress
+The structure of the markup may be described briefly, in terms of WordPress
 short codes, as follows -
 
 `[citypay-payform]`, and `[/citypay-payform]`: activates the CityPay Paylink
@@ -137,12 +137,12 @@ and processing of the payment processing forms.
 ### On page load
 
 `[citypay-payform-on-page-load]`, and `[/citypay-payform-on-page-load]`:
-indicates the actions to be performed by Wordpress on initial loading
+indicates the actions to be performed by WordPress on initial loading
 the page.
 
 ### Display
 
-`[citypay-payform-display /]`: instructs Wordpress to display the payment
+`[citypay-payform-display /]`: instructs WordPress to display the payment
 initiating form in the relevant action. The text to be used for the submit
 button is specified using the `submit` shortcode attribute as follows -
 
@@ -152,7 +152,7 @@ button is specified using the `submit` shortcode attribute as follows -
 
 `[citypay-payform-on-redirect-success]`, and
 `[/citypay-payform-on-redirect-success]`: indicates the action to be performed
-by Wordpress on payment processing being completed successfully.
+by WordPress on payment processing being completed successfully.
 
 ### On redirect failure
 
@@ -164,12 +164,12 @@ by Wordpress on failure of the payment process.
 
 `[citypay-payform-on-redirect-cancel]`, and
 `[/citypay-payform-on-redirect-cancel]`: indicates the action to be performed
-by Wordpress on cancellation of the payment process.
+by WordPress on cancellation of the payment process.
 
 ### On error
 
 `[citypay-payform-on-error]`, and `[/citypay-payform-on-error]`: indicates the
-action to be performed by Wordpress on the occurrence of an error. 
+action to be performed by WordPress on the occurrence of an error.
 
 ## PayForm configuration short codes
 
@@ -179,15 +179,15 @@ action to be performed by Wordpress on the occurrence of an error.
 of the various text-based PayForm fields by reference to the following shortcode
 attributes -
 
-`label`: specifies the text to be generated by Wordpress for the relevant
+`label`: specifies the text to be generated by WordPress for the relevant
     field.
 
 `name`: specifies the name of the field which is used to identify the
-    value in the context of the form submitted to Wordpress on submission
+    value in the context of the form submitted to WordPress on submission
     of the PayForm.
 
 `order`: specifies the order of the field on the PayForm generated by
-    Wordpress.
+    WordPress.
 
 `placeholder`: specifies the text, if any, to be generated as a placeholder
     for the relevant PayForm field.
@@ -201,10 +201,10 @@ attributes -
     the relevant field, thereby guiding processing.
 
 `id`: specifies the identifier, if any, for the HTML form input field
-    generated by Wordpress for the relevant field to enable
+    generated by WordPress for the relevant field to enable
     cross-referencing and automation by, for example and only if
     necessary, JavaScript scripts deployed through supplementary
-    Wordpress.
+    WordPress.
 
 `passthrough`: a boolean value indicating that the value submitted by the
     visitor should be passed to the CityPay PayLink hosted payment form
@@ -217,12 +217,12 @@ enables configuration of a currency amount-based PayForm field by reference
 to the following shortcode attributes -
        
 `id`: specifies the identifier, if any, for the HTML form input field
-    generated by Wordpress for the relevant field to enable
+    generated by WordPress for the relevant field to enable
     cross-referencing and automation by, for example and only if
     necessary, JavaScript scripts deployed through supplementary
-    Wordpress.
+    WordPress.
 
-`label`: specifies the text to be generated by Wordpress for the relevant
+`label`: specifies the text to be generated by WordPress for the relevant
     field.
 
 `maximum`: specifies the maximum amount for which the prospective
@@ -239,7 +239,7 @@ to the following shortcode attributes -
     of the PayForm.
 
 `order`: specifies the order of the field on the PayForm generated by
-    Wordpress.
+    WordPress.
 
 ### Checkbox fields
 
@@ -248,13 +248,13 @@ enables configuration of a checkbox-based PayForm field by reference to the
 following shortcode attributes -
 
 `id`: specifies the identifier, if any, for the HTML form input field
-    generated by Wordpress for the relevant field to enable
+    generated by WordPress for the relevant field to enable
     cross-referencing and automation by, for example and only if
     necessary, JavaScript scripts deployed through supplementary
-    Wordpress.
+    WordPress.
 
 `name`: specifies the name of the field which is used to identify the
-    value in the context of the form submitted to Wordpress on submission
+    value in the context of the form submitted to WordPress on submission
     of the PayForm.
 
 `type`: provides one of the following values `accept-terms-and-conditions`,
@@ -270,7 +270,7 @@ following shortcode attributes -
     required by acquirers to avoid unnecessary charge-back disputes.
 
 `order`: specifies the order of the field on the PayForm generated by
-    Wordpress.
+    WordPress.
 
 ### Error messages
 
@@ -369,13 +369,13 @@ labeled Test Mode appearing on the plugin settings form should be ticked.
 ## Processing live transactions
 
 To process live transactions for settlement by the upstream acquirer, the
-check box labeled Test Mode referenced in the paragraph above must be
+checkbox labeled Test Mode referenced in the paragraph above must be
 unticked.
 
 ## Enabling logging
 
 The interaction between WordPress, WooCommerce and the CityPay Paylink
-hosted payment form service may be monitored by ticking the check box labeled
+hosted payment form service may be monitored by ticking the checkbox labeled
 Debug Log appearing on the plugin settings form.
 
 Log payment events appearing in the resultant log file will help to trace
@@ -441,6 +441,34 @@ configuration file for PHP using the curl.cainfo configuration setting.
 
 
 == Changelog ==
+
+= 1.2.6 =
+
+* Updated readme file.
+
+= 1.2.5 =
+
+* Fixed Paylink Button to handle postback and added configuration for custom postback url.
+
+= 1.2.3 =
+
+* Fixed Paylink Standalone Payment Button.
+
+= 1.2.1 =
+
+* Enforcement of TLS_v1.2.
+
+= 1.2.0 =
+
+* Addition of standalone payment button.
+
+= 1.1.7 =
+
+* Added compatibility with PHP 7.3.
+
+= 1.1.6 =
+
+* Fixed identifier validation which did not check characters/a minimum of 5 characters correctly.
 
 = 1.0.5 =
 
