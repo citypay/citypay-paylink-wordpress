@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# File is used to deploy from a git source location to Wordpress SVN
+# File is used to deploy from a git source location to WordPress SVN
 # Run ./deploy.sh on the latest branch that is ready for deployment
 # and ensure tags are correct on src/readme.txt and ./readme.md.
 # The script will check for them

@@ -5,8 +5,6 @@ CityPay Paylink PayForm WP is a plugin that supplements WordPress with
 support for a form leading to payment processing using CityPay hosted payment
 forms.
 
-![Wordpress Logo](https://citypay.com/static/img/logo-x500.png)
-
 ## Description
 
 CityPay Paylink PayForm WP is a plugin that supplements WordPress with
@@ -32,11 +30,11 @@ accessed from the WordPress console.
 
 ### Minimum requirements
 
-* PHP version 5.2.4 or greater with libcurl support (Tested up to: 8.1.11)
+* PHP version 5.2.4 or greater with libcurl support (Tested up to: 8.2.4)
 * MySQL version 5.0 or greater
 * libcurl version 7.10.5 or later with SSL / TLS support
 * openssl, to current patch levels
-* WordPress 4.0 or greater (Tested up to: 6.1)
+* WordPress 4.0 or greater (Tested up to: 6.2)
 
 ### Automatic installation
 

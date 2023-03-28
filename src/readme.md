@@ -1,15 +1,13 @@
 CityPay Paylink WordPress Plugin
 ==========================
 
-CityPay Paylink PayForm WP is a plugin that supplements Wordpress with
+CityPay Paylink PayForm WP is a plugin that supplements WordPress with
 support for a form leading to payment processing using CityPay hosted payment
 forms.
 
-![Wordpress Logo](https://citypay.com/static/img/logo-x500.png)
-
 ## Description
 
-CityPay Paylink PayForm WP is a plugin that supplements Wordpress with
+CityPay Paylink PayForm WP is a plugin that supplements WordPress with
 support for a form leading to payment processing using CityPay hosted payment
 forms.
 
@@ -23,7 +21,7 @@ identifier; the plugin does not at present provide or support -
   references, amounts payable thereunder or any external database able
   to receive notification of successful and failed payment transactions; and
 * maintenance of any records of payments or payment attempts that can be
-  accessed from the Wordpress console.
+  accessed from the WordPress console.
 * v1.2.0 introduces NEW standalone payment button that allows users to
   set up a quick payment button with a specified amount to generate a
   payment token and allow customers perform a payment.
@@ -32,15 +30,15 @@ identifier; the plugin does not at present provide or support -
 
 ### Minimum requirements
 
-* PHP version 5.2.4 or greater with libcurl support
+* PHP version 5.2.4 or greater (Tested up to: 8.2.4) with libcurl support
 * MySQL version 5.0 or greater
 * libcurl version 7.10.5 or later with SSL / TLS support
 * openssl, to current patch levels
-* WordPress 4.0 or greater
+* WordPress 4.0 or greater (Tested up to: 6.2)
 
 ### Automatic installation
 
-To perform an automatic installation of the CityPay Paylink Wordpress plugin,
+To perform an automatic installation of the CityPay Paylink WordPress plugin,
 login to your WordPress dashboard, select the Plugins menu and click Add New.
 
 In the search field, type "CityPay" and click Search Plugins. Once you have
@@ -48,7 +46,7 @@ found our payment gateway plugin, it may be installed by clicking Install Now.
 
 ### Manual installation
 
-The perform a manual installation of the CityPay Paylink Wordpress plugin,
+The perform a manual installation of the CityPay Paylink WordPress plugin,
 login to your WordPress dashboard, select the Plugins menu and click Add New.
 
 Then select Upload Plugin, browse to the location of the ZIP file containing
@@ -59,18 +57,18 @@ Install Now.
 
 Once the plugin has been installed, you may need to activate it by selecting
 the Plugins menu, clicking Installed Plugins and then activating the plugin
-with the name "CityPay Wordpress Payments" by clicking on the link labeled
+with the name "CityPay WordPress Payments" by clicking on the link labeled
 Activate.
 
 The merchant account, the license key, the transaction currency and other
 information relating to the processing of transactions through the CityPay
 Paylink hosted form payment gateway may be configured by selecting the
-settings page which is accessed through the Wordpress plugins page.
+settings page which is accessed through the WordPress plugins page.
 
 After the settings for the plugin have been configured, they must be saved
 by clicking on the button labeled 'Save Changes' before they take effect.
 
-## Creating a page in Wordpress to accept payments
+## Creating a page in WordPress to accept payments
 
 To accept payments using the plugin, it is necessary to create and mark-up
 a static page containing the layout, fields, field names and custom error
@@ -123,7 +121,7 @@ messages as follows -
         [/citypay-payform-on-error]
     [/citypay-payform]
 
-The structure of the markup may be described briefly, in terms of Wordpress
+The structure of the markup may be described briefly, in terms of WordPress
 short codes, as follows -
 
 `[citypay-payform]`, and `[/citypay-payform]`: activates the CityPay Paylink
@@ -150,24 +148,24 @@ button is specified using the `submit` shortcode attribute as follows -
 
 `[citypay-payform-on-redirect-success]`, and
 `[/citypay-payform-on-redirect-success]`: indicates the action to be performed
-by Wordpress on payment processing being completed successfully.
+by WordPress on payment processing being completed successfully.
 
 ### On redirect failure
 
 `[citypay-payform-on-redirect-failure]`, and
 `[/citypay-payform-on-redirect-failure]`: indicates the action to be performed
-by Wordpress on failure of the payment process.
+by WordPress on failure of the payment process.
 
 ### On redirect cancel
 
 `[citypay-payform-on-redirect-cancel]`, and
 `[/citypay-payform-on-redirect-cancel]`: indicates the action to be performed
-by Wordpress on cancellation of the payment process.
+by WordPress on cancellation of the payment process.
 
 ### On error
 
 `[citypay-payform-on-error]`, and `[/citypay-payform-on-error]`: indicates the
-action to be performed by Wordpress on the occurrence of an error.
+action to be performed by WordPress on the occurrence of an error.
 
 ## PayForm configuration short codes
 
@@ -177,11 +175,11 @@ action to be performed by Wordpress on the occurrence of an error.
 of the various text-based PayForm fields by reference to the following shortcode
 attributes -
 
-`label`: specifies the text to be generated by Wordpress for the relevant
+`label`: specifies the text to be generated by WordPress for the relevant
 field.
 
 `name`: specifies the name of the field which is used to identify the
-value in the context of the form submitted to Wordpress on submission
+value in the context of the form submitted to WordPress on submission
 of the PayForm.
 
 `order`: specifies the order of the field on the PayForm generated by

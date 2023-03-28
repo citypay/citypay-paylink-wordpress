@@ -3,8 +3,8 @@ Contributors: citypay
 Tags: ecommerce, e-commerce, payment gateway
 Donate link: http://citypay.com/
 Requires at least: 4.0
-Tested up to: 6.1
-Stable tag: 1.2.7
+Tested up to: 6.2
+Stable tag: 1.2.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,11 +34,11 @@ accessed from the WordPress console.
 
 # Minimum requirements
 
-* PHP version 5.2.4 or greater with libcurl support
+* PHP version 5.2.4 or greater (Tested up to: 8.2.4) with libcurl support
 * MySQL version 5.0 or greater
 * libcurl version 7.10.5 or later with SSL / TLS support
 * openssl, to current patch levels
-* WordPress 4.0 or greater
+* WordPress 4.0 or greater (Tested up to: 6.2)
 
 # Automatic installation
 
@@ -158,7 +158,7 @@ by WordPress on payment processing being completed successfully.
 
 `[citypay-payform-on-redirect-failure]`, and
 `[/citypay-payform-on-redirect-failure]`: indicates the action to be performed
-by Wordpress on failure of the payment process.
+by WordPress on failure of the payment process.
 
 ### On redirect cancel
 
@@ -441,6 +441,10 @@ configuration file for PHP using the curl.cainfo configuration setting.
 
 
 == Changelog ==
+
+= 1.2.8 =
+
+* Updated tested up to for WordPress.
 
 = 1.2.7 =
 
