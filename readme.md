@@ -5,7 +5,7 @@ CityPay Paylink PayForm WP is a plugin that supplements WordPress with
 support for a form leading to payment processing using CityPay hosted payment
 forms.
 
-## Description
+## Description  
 
 CityPay Paylink PayForm WP is a plugin that supplements WordPress with
 support for a form leading to payment processing using CityPay hosted payment

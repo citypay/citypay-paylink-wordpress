@@ -4,7 +4,7 @@ Tags: ecommerce, e-commerce, payment gateway
 Donate link: http://citypay.com/
 Requires at least: 4.0
 Tested up to: 6.2
-Stable tag: 1.2.8
+Stable tag: 1.2.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -441,6 +441,10 @@ configuration file for PHP using the curl.cainfo configuration setting.
 
 
 == Changelog ==
+
+= 1.2.9 =
+
+* Updated tested up to for WordPress.
 
 = 1.2.8 =
 
