@@ -3,7 +3,7 @@ Contributors: citypay
 Tags: ecommerce, e-commerce, payment gateway
 Donate link: http://citypay.com/
 Requires at least: 4.0
-Tested up to: 6.2
+Tested up to: 6.2.2
 Stable tag: 1.2.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -38,7 +38,7 @@ accessed from the WordPress console.
 * MySQL version 5.0 or greater
 * libcurl version 7.10.5 or later with SSL / TLS support
 * openssl, to current patch levels
-* WordPress 4.0 or greater (Tested up to: 6.2)
+* WordPress 4.0 or greater (Tested up to: 6.2.2)
 
 # Automatic installation
 
