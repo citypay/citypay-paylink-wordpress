@@ -34,7 +34,7 @@ identifier; the plugin does not at present provide or support -
 * MySQL version 5.0 or greater
 * libcurl version 7.10.5 or later with SSL / TLS support
 * openssl, to current patch levels
-* WordPress 4.0 or greater (Tested up to: 6.2.2)
+* WordPress 4.0 or greater (Tested up to: 6.3.2)
 
 ### Automatic installation
 

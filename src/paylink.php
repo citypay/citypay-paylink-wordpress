@@ -4,7 +4,7 @@
  * Plugin Name: CityPay PayLink PayForm WP
  * Plugin URI: http://citypay.com/paylink
  * Description: Include an arbitrary payment processing form.
- * Version: 1.2.9
+ * Version: 1.3.0
  * Author: CityPay Limited
  * Author URI: http://citypay.com
  */
@@ -18,7 +18,7 @@ require_once('includes/class-citypay-filter.php');
 require_once('includes/class-citypay-validation.php');
 require_once('includes/class-citypay-paylink.php');
 
-define('CP_PAYLINK_VERSION', '1.2.9');
+define('CP_PAYLINK_VERSION', '1.3.0');
 define('CP_PAYLINK_DISPATCHER', 'cp_paylink');
 define('CP_PAYLINK_MERCHANT_ID', 'cp_paylink_merchant_id');
 define('CP_PAYLINK_LICENCE_KEY', 'cp_paylink_licence_key');
@@ -1113,7 +1113,10 @@ function cp_paylink_template_redirect_on_redirect_success()
 
 function cp_paylink_action_pay_btn() {
     if (isset($_POST['identifier']) && isset($_POST['amount']) && isset($_POST['description'])) {
-        cp_paylink_create_token($_POST['amount'], $_POST['identifier'], $_POST['description']);
+        $identifier = sanitize_text_field($_POST['identifier']);
+        $amount = sanitize_text_field($_POST['amount']);
+        $description = sanitize_text_field($_POST['description']);
+        cp_paylink_create_token($amount, $identifier, $description);
     }
 }
 
@@ -1166,7 +1169,7 @@ function cp_paylink_make_payment()
 function cp_paylink_template_redirect_dispatcher()
 {
     if (isset($_GET[CP_PAYLINK_DISPATCHER])) {
-        $action = $_GET[CP_PAYLINK_DISPATCHER];
+        $action = sanitize_text_field($_GET[CP_PAYLINK_DISPATCHER]);
         switch ($action) {
             case 'pay':
                 cp_paylink_make_payment();
@@ -1214,7 +1217,7 @@ function cp_paylink_administration()
 
 function cp_paylink_settings_merchant_id()
 {
-    $option = get_option(CP_PAYLINK_MERCHANT_ID);
+    $option = esc_attr(get_option(CP_PAYLINK_MERCHANT_ID));
     echo "<input type='text' id='"
         . CP_PAYLINK_MERCHANT_ID
         . "' name='"
@@ -1224,7 +1227,7 @@ function cp_paylink_settings_merchant_id()
 
 function cp_paylink_settings_licence_key()
 {
-    $option = get_option(CP_PAYLINK_LICENCE_KEY);
+    $option = esc_attr(get_option(CP_PAYLINK_LICENCE_KEY));
     echo "<input type='text' id='"
         . CP_PAYLINK_LICENCE_KEY
         . "' name='"
@@ -1234,7 +1237,7 @@ function cp_paylink_settings_licence_key()
 
 function cp_paylink_settings_merchant_email_address()
 {
-    $option = get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS);
+    $option = esc_attr(get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS));
     echo "<input type='text' id='"
         . CP_PAYLINK_MERCHANT_EMAIL_ADDRESS
         . "' name='"
@@ -1244,7 +1247,7 @@ function cp_paylink_settings_merchant_email_address()
 
 function cp_paylink_settings_enable_merchant_email()
 {
-    $option = get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false);
+    $option = esc_attr(get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false));
     echo "<input type='checkbox' id='"
         . CP_PAYLINK_ENABLE_MERCHANT_EMAIL
         . "' name='"
@@ -1256,7 +1259,7 @@ function cp_paylink_settings_enable_merchant_email()
 
 function cp_paylink_settings_identifier_prefix()
 {
-    $option = get_option(CP_PAYLINK_IDENTIFIER_PREFIX);
+    $option = esc_attr(get_option(CP_PAYLINK_IDENTIFIER_PREFIX));
     echo "<input type='text' id='"
         . CP_PAYLINK_IDENTIFIER_PREFIX
         . "' name='"
@@ -1266,7 +1269,7 @@ function cp_paylink_settings_identifier_prefix()
 
 function cp_paylink_settings_postback_url()
 {
-    $option = get_option(CP_PAYLINK_POSTBACK_URL);
+    $option = esc_attr(get_option(CP_PAYLINK_POSTBACK_URL));
     echo "<input type='text' id='"
         . CP_PAYLINK_POSTBACK_URL
         . "' name='"
@@ -1276,7 +1279,7 @@ function cp_paylink_settings_postback_url()
 
 function cp_paylink_settings_enable_test_mode()
 {
-    $option = get_option(CP_PAYLINK_ENABLE_TEST_MODE, true);
+    $option = esc_attr(get_option(CP_PAYLINK_ENABLE_TEST_MODE, true));
     echo "<input type='checkbox' id='"
         . CP_PAYLINK_ENABLE_TEST_MODE
         . "' name='"
@@ -1291,7 +1294,7 @@ function cp_paylink_settings_enable_test_mode()
 
 function cp_paylink_settings_enable_debug_mode()
 {
-    $option = get_option(CP_PAYLINK_ENABLE_DEBUG_MODE, true);
+    $option = esc_attr(get_option(CP_PAYLINK_ENABLE_DEBUG_MODE, true));
     echo "<input type='checkbox' id='"
         . CP_PAYLINK_ENABLE_DEBUG_MODE
         . "' name='"

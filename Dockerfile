@@ -1,4 +1,4 @@
-FROM wordpress:beta-6.2-RC4-php8.2-apache
+FROM wordpress:latest
 LABEL maintainer="Michael Martins <michael.martins@citypay.com>"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -12,7 +12,7 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
 	&& mv wp-cli.phar /usr/local/bin/wp \
 	&& wp --info
 
-ENV CITYPAY_PLUGIN_VERSION 1.2.9
+ENV CITYPAY_PLUGIN_VERSION 1.3.0
 
 COPY scripts/*.sh /usr/local/bin/
 

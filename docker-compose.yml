@@ -13,7 +13,7 @@ services:
         networks:
                 - wordpressnet
     wordpress:
-        image: citypay/wordpress:1.2.9
+        image: citypay/wordpress:1.3.0
         ports:
                 - 127.0.0.1:80:80
                 - 127.0.0.1:4040:4040
@@ -32,3 +32,4 @@ services:
 networks:
     wordpressnet:
             driver: bridge
+
