@@ -5,7 +5,7 @@ class CityPay_Logger
     public static function logFilePathName($plugin_file_path) {
         return dirname($plugin_file_path)
             .'/logs/'
-            .date('Y-m-d').'.log';
+            .gmdate('Y-m-d').'.log';
     }
     
     private $log_file;
@@ -34,7 +34,7 @@ class CityPay_Logger
     }
     
     public function debugLog($message) {
-        $_message = $this->newline.date(DATE_RFC2822).' - '.$message;
+        $_message = $this->newline.gmdate(DATE_RFC2822).' - '.$message;
         error_log($_message, 3, $this->log_file);
     }
 }

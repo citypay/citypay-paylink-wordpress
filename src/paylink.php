@@ -90,8 +90,8 @@ $cp_paylink_default_error_messages = array(
     => __('You must accept the terms and conditions to use this service.')
 );
 
-global $redirect_success_url;
-global $redirect_failure_url;
+global $cp_paylink_redirect_success_url;
+global $cp_paylink_redirect_failure_url;
 
 
 define('CP_PAYLINK_PROCESSING_ERROR_DATA_INPUT_ERROR', 0x05);
@@ -172,7 +172,7 @@ class cp_paylink_field
         $this->passthrough = $passthrough;
     }
 
-    public function configure_error_message($attrs, $content = null)
+    public function cp_paylink_configure_error_message($attrs, $content = null)
     {
         $a = shortcode_atts(
             array(
@@ -523,7 +523,7 @@ function cp_paylink_payform_amount_field($attrs, $content = null)
     );
 
     if (!is_null($field) && !is_null($content)) {
-        add_shortcode('error-message', array($field, 'configure_error_message'));
+        add_shortcode('error-message', array($field, 'cp_paylink_configure_error_message'));
         $_content = do_shortcode($content);
         remove_shortcode('error-message');
         $field->setContent($_content);
@@ -608,7 +608,7 @@ function cp_paylink_payform_field($attrs, $content = null)
     }
 
     if (!is_null($field) && !is_null($content)) {
-        add_shortcode('error-message', array($field, 'configure_error_message'));
+        add_shortcode('error-message', array($field, 'cp_paylink_configure_error_message'));
         $_content = do_shortcode($content);
         remove_shortcode('error-message');
         $field->setContent($_content);
@@ -660,7 +660,7 @@ function cp_paylink_payform_checkbox_field($attrs, $content = null)
     }
 
     if (!is_null($field) && !is_null($content)) {
-        add_shortcode('error-message', array($field, 'configure_error_message'));
+        add_shortcode('error-message', array($field, 'cp_paylink_configure_error_message'));
         $_content = do_shortcode($content);
         remove_shortcode('error-message');
         $field->setContent($_content);
@@ -931,9 +931,9 @@ function cp_paylink_action_pay()
         $postback_url = add_query_arg(CP_PAYLINK_DISPATCHER, 'postback', $current_url);
     }
 
-    $success_url = get_option('$redirect_success_url');
+    $success_url = get_option('$cp_paylink_redirect_success_url');
 
-    $failure_url = get_option('$redirect_failure_url');
+    $failure_url = get_option('$cp_paylink_redirect_failure_url');
 
 
     $logger = new CityPay_Logger(__FILE__);
@@ -1011,7 +1011,7 @@ function redirect_url_success($atts)
         $atts
     );
 
-    update_option('$redirect_success_url', $url['url']);
+    update_option('$cp_paylink_redirect_success_url', $url['url']);
 
     return '';
 }
@@ -1025,7 +1025,7 @@ function redirect_url_failure($atts)
         $atts
     );
 
-    update_option('$redirect_failure_url', $url['url']);
+    update_option('$cp_paylink_redirect_failure_url', $url['url']);
 
     return '';
 }
@@ -1112,11 +1112,15 @@ function cp_paylink_template_redirect_on_redirect_success()
 }
 
 function cp_paylink_action_pay_btn() {
-    if (isset($_POST['identifier']) && isset($_POST['amount']) && isset($_POST['description'])) {
-        $identifier = sanitize_text_field($_POST['identifier']);
-        $amount = sanitize_text_field($_POST['amount']);
-        $description = sanitize_text_field($_POST['description']);
-        cp_paylink_create_token($amount, $identifier, $description);
+    if ( isset( $_POST['cp_nonce_field'] ) && wp_verify_nonce( $_POST['cp_nonce_field']) ) {
+        if ( isset( $_POST['identifier'] ) && isset( $_POST['amount'] ) && isset( $_POST['description'] ) ) {
+            $identifier  = sanitize_text_field( $_POST['identifier'] );
+            $amount      = sanitize_text_field( $_POST['amount'] );
+            $description = sanitize_text_field( $_POST['description'] );
+            cp_paylink_create_token( $amount, $identifier, $description );
+        }
+    } else {
+        wp_die( 'Nonce verification failed', 'Nonce Error', array( 'response' => 403 ) );
     }
 }
 
@@ -1219,9 +1223,9 @@ function cp_paylink_settings_merchant_id()
 {
     $option = esc_attr(get_option(CP_PAYLINK_MERCHANT_ID));
     echo "<input type='text' id='"
-        . CP_PAYLINK_MERCHANT_ID
+        . esc_attr(CP_PAYLINK_MERCHANT_ID)
         . "' name='"
-        . CP_PAYLINK_MERCHANT_ID
+        . esc_attr(CP_PAYLINK_MERCHANT_ID)
         . "' value='${option}' size='20'></input>";
 }
 
@@ -1229,9 +1233,9 @@ function cp_paylink_settings_licence_key()
 {
     $option = esc_attr(get_option(CP_PAYLINK_LICENCE_KEY));
     echo "<input type='text' id='"
-        . CP_PAYLINK_LICENCE_KEY
+        . esc_attr(CP_PAYLINK_LICENCE_KEY)
         . "' name='"
-        . CP_PAYLINK_LICENCE_KEY
+        . esc_attr(CP_PAYLINK_LICENCE_KEY)
         . "' value='${option}' size='20'></input>";
 }
 
@@ -1239,19 +1243,19 @@ function cp_paylink_settings_merchant_email_address()
 {
     $option = esc_attr(get_option(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS));
     echo "<input type='text' id='"
-        . CP_PAYLINK_MERCHANT_EMAIL_ADDRESS
+        . esc_attr(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS)
         . "' name='"
-        . CP_PAYLINK_MERCHANT_EMAIL_ADDRESS
-        . "' value='${option}' size='60'></input>";
+        . esc_attr(CP_PAYLINK_MERCHANT_EMAIL_ADDRESS)
+        . "' value='${option}' size='60'>";
 }
 
 function cp_paylink_settings_enable_merchant_email()
 {
     $option = esc_attr(get_option(CP_PAYLINK_ENABLE_MERCHANT_EMAIL, false));
     echo "<input type='checkbox' id='"
-        . CP_PAYLINK_ENABLE_MERCHANT_EMAIL
+        . esc_attr(CP_PAYLINK_ENABLE_MERCHANT_EMAIL)
         . "' name='"
-        . CP_PAYLINK_ENABLE_MERCHANT_EMAIL
+        . esc_attr(CP_PAYLINK_ENABLE_MERCHANT_EMAIL)
         . "'"
         . ($option ? ' checked' : '')
         . '></input>';
@@ -1261,9 +1265,9 @@ function cp_paylink_settings_identifier_prefix()
 {
     $option = esc_attr(get_option(CP_PAYLINK_IDENTIFIER_PREFIX));
     echo "<input type='text' id='"
-        . CP_PAYLINK_IDENTIFIER_PREFIX
+        . esc_attr(CP_PAYLINK_IDENTIFIER_PREFIX)
         . "' name='"
-        . CP_PAYLINK_IDENTIFIER_PREFIX
+        . esc_attr(CP_PAYLINK_IDENTIFIER_PREFIX)
         . "' value='${option}' size='20' placeholder='(optional)'></input>";
 }
 
@@ -1271,9 +1275,9 @@ function cp_paylink_settings_postback_url()
 {
     $option = esc_attr(get_option(CP_PAYLINK_POSTBACK_URL));
     echo "<input type='text' id='"
-        . CP_PAYLINK_POSTBACK_URL
+        . esc_attr(CP_PAYLINK_POSTBACK_URL)
         . "' name='"
-        . CP_PAYLINK_POSTBACK_URL
+        . esc_attr(CP_PAYLINK_POSTBACK_URL)
         . "' value='${option}' size='60' placeholder='(optional)'></input>";
 }
 
@@ -1281,9 +1285,9 @@ function cp_paylink_settings_enable_test_mode()
 {
     $option = esc_attr(get_option(CP_PAYLINK_ENABLE_TEST_MODE, true));
     echo "<input type='checkbox' id='"
-        . CP_PAYLINK_ENABLE_TEST_MODE
+        . esc_attr(CP_PAYLINK_ENABLE_TEST_MODE)
         . "' name='"
-        . CP_PAYLINK_ENABLE_TEST_MODE
+        . esc_attr(CP_PAYLINK_ENABLE_TEST_MODE)
         . "' "
         . ($option ? ' checked' : '')
         . "></input> Generate transactions using test mode"
@@ -1296,9 +1300,9 @@ function cp_paylink_settings_enable_debug_mode()
 {
     $option = esc_attr(get_option(CP_PAYLINK_ENABLE_DEBUG_MODE, true));
     echo "<input type='checkbox' id='"
-        . CP_PAYLINK_ENABLE_DEBUG_MODE
+        . esc_attr(CP_PAYLINK_ENABLE_DEBUG_MODE)
         . "' name='"
-        . CP_PAYLINK_ENABLE_DEBUG_MODE
+        . esc_attr(CP_PAYLINK_ENABLE_DEBUG_MODE)
         . "'"
         . ($option ? ' checked' : '')
         . "></input> Enable logging<p class='description'>Log payment events, "
@@ -1447,7 +1451,7 @@ function cp_paylink_admin_init()
 {
 
     add_settings_section(
-        'main_section',
+        'cp_paylink_main_section',
         'Main Settings',
         'cp_paylink_settings_main_section_text',
         'cp-paylink-settings'
@@ -1465,7 +1469,7 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
-        'licence-key',
+        'cp_paylink_licence_key',
         'Client Licence Key',
         'cp_paylink_settings_licence_key',
         'cp-paylink-settings',
@@ -1476,7 +1480,7 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
-        'merchant-email-address',
+        'cp_paylink_merchant_email_address',
         'Email address',
         'cp_paylink_settings_merchant_email_address',
         'cp-paylink-settings',
@@ -1487,7 +1491,7 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
-        'enable-merchant-email',
+        'cp_paylink_enable_merchant_email',
         'Enable merchant email',
         'cp_paylink_settings_enable_merchant_email',
         'cp-paylink-settings',
@@ -1498,7 +1502,7 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
-        'identifier-prefix',
+        'cp_paylink_identifier_prefix',
         'Identifier Prefix',
         'cp_paylink_settings_identifier_prefix',
         'cp-paylink-settings',
@@ -1509,7 +1513,7 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
-        'postback-url',
+        'cp_paylink_postback_url',
         'Postback URL',
         'cp_paylink_settings_postback_url',
         'cp-paylink-settings',
@@ -1520,7 +1524,7 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
-        'enable-test-mode',
+        'cp_paylink_enable_test_mode',
         'Enable test mode',
         'cp_paylink_settings_enable_test_mode',
         'cp-paylink-settings',
@@ -1531,7 +1535,7 @@ function cp_paylink_admin_init()
     );
 
     add_settings_field(
-        'enable-debug-mode',
+        'cp_paylink_enable_debug_mode',
         'Enable debug mode',
         'cp_paylink_settings_enable_debug_mode',
         'cp-paylink-settings',
@@ -1558,7 +1562,7 @@ function cp_paylink_settings_page()
     }
 
     echo '<div class="wrap"><h1>'
-        . __('CityPay PayLink for WordPress', 'cp-paylink-wp')
+        . esc_html__('CityPay PayLink for WordPress', 'cp-paylink-wp')
         . '</h1><form method="post" action="options.php">';
 
     settings_fields('cp-paylink-settings');
@@ -1597,6 +1601,7 @@ function cp_paylink_standalone_button($attrs)
         . '<input type="hidden" name="amount" value= "' . $amount . '" />'
         . '<input type="hidden" name="identifier" value= "' . $identifier . '" />'
         . '<input type="hidden" name="description" value= "' . $description . '" />'
+        . wp_nonce_field(-1, 'cp_nonce_field', true, false)
         . '<button type="submit" class="uk-button uk-button-primary uk-button-large">'
         . $attrs['label']
         . '</button>'

@@ -1,4 +1,5 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 /* Generic code for PayLink */
 
 require_once('class-citypay-library.php');
