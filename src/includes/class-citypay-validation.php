@@ -4,12 +4,12 @@
  *
  * @author rwbisson
  */
-class CityPay_Validation {
+class CPPP_Validation {
     
-    const CP_PAYLINK_EMAIL_REGEX = '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)+$/';
+    const CPPP_EMAIL_REGEX = '/^[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]*)+$/';
 
     public static function validateEmailAddress($email_address) {
-        return preg_match(self::CP_PAYLINK_EMAIL_REGEX, $email_address);
+        return preg_match(self::CPPP_EMAIL_REGEX, $email_address);
     }
     
     public static function validateMerchantId($merchant_id) {

@@ -1,16 +1,16 @@
 <?php
 
-class CityPay_Filter {
+class CPPP_Filter {
     
-    public static function cp_paylink_get_tag($s, &$i, &$i_max)
+    public static function CPPP_get_tag($s, &$i, &$i_max)
     {
         $j = $i++;
 
         $c = $s[$i];
         if ($c != "/") {
-            $tag_type = CP_PAYLINK_OPENING_TAG;
+            $tag_type = CPPP_OPENING_TAG;
         } else {
-            $tag_type = CP_PAYLINK_CLOSING_TAG;
+            $tag_type = CPPP_CLOSING_TAG;
             $i++;
         }
 
@@ -40,8 +40,8 @@ class CityPay_Filter {
                     }
                 }
 
-                if ($c == "/" && $tag_type == CP_PAYLINK_OPENING_TAG) {
-                    $tag_type = CP_PAYLINK_SELF_CLOSING_TAG;
+                if ($c == "/" && $tag_type == CPPP_OPENING_TAG) {
+                    $tag_type = CPPP_SELF_CLOSING_TAG;
                 }
 
                 $attr_name = '';
@@ -78,12 +78,12 @@ class CityPay_Filter {
         {
             switch ($tag_type)
             {
-            case CP_PAYLINK_OPENING_TAG:
+            case CPPP_OPENING_TAG:
                 //$stack[] = new tag($tag, $)
                 break;
 
-            case CP_PAYLINK_SELF_CLOSING_TAG:
-            case CP_PAYLINK_CLOSING_TAG:
+            case CPPP_SELF_CLOSING_TAG:
+            case CPPP_CLOSING_TAG:
 
                 break;
             }
@@ -93,7 +93,7 @@ class CityPay_Filter {
         $tag_obj = tag($tag_lc, $attrs, $j, $i, $tag_type);
     }
 
-    public static function cp_paylink_trim_outer_p_and_br_tags($s) {
+    public static function CPPP_trim_outer_p_and_br_tags($s) {
 
         $stack = array();
         $content = array();
@@ -121,7 +121,7 @@ class CityPay_Filter {
     }
 
 
-    public static function cp_paylink_trim_p_and_br_tags($s) {
+    public static function CPPP_trim_p_and_br_tags($s) {
         $i = 0;
         $i_max = strlen($s);
         while ($i < $i_max) {

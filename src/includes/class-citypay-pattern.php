@@ -7,26 +7,26 @@
  * 
  * 
  */
-abstract class CityPay_Pattern_Token_Abstract_Condition_Component {
+abstract class CPPP_Pattern_Token_Abstract_Condition_Component {
     
 }
 
-class CityPay_Pattern_Token_Compound_Condition_Marker extends CityPay_Pattern_Token_Abstract_Condition_Component {
+class CPPP_Pattern_Token_Compound_Condition_Marker extends CPPP_Pattern_Token_Abstract_Condition_Component {
     
 }
 
-class CityPay_Pattern_Token_Compound_Condition_Operator extends CityPay_Pattern_Token_Abstract_Condition_Component {
+class CPPP_Pattern_Token_Compound_Condition_Operator extends CPPP_Pattern_Token_Abstract_Condition_Component {
     public $operator;
     public function __construct($operator) {
         $this->operator = $operator;
     }
 }
 
-class CityPay_Pattern_Token_Compound_Condition extends CityPay_Pattern_Token_Abstract_Condition_Component {
+class CPPP_Pattern_Token_Compound_Condition extends CPPP_Pattern_Token_Abstract_Condition_Component {
     public $conditions;
 }
 
-class CityPay_Pattern_Token_Condition extends CityPay_Pattern_Token_Abstract_Condition_Component {
+class CPPP_Pattern_Token_Condition extends CPPP_Pattern_Token_Abstract_Condition_Component {
     public $operator, $value;
     public function __construct($operator, $value = null) {
         $this->operator = $operator;
@@ -34,15 +34,15 @@ class CityPay_Pattern_Token_Condition extends CityPay_Pattern_Token_Abstract_Con
     }
 }
 
-abstract class CityPay_Pattern_Abstract_Token {
+abstract class CPPP_Pattern_Abstract_Token {
     
 }
 
-class CityPay_Pattern_Token_CharacterString extends CityPay_Pattern_Abstract_Token {
+class CPPP_Pattern_Token_CharacterString extends CPPP_Pattern_Abstract_Token {
     
 }
 
-class CityPay_Pattern_Token_Expression extends CityPay_Pattern_Abstract_Token {
+class CPPP_Pattern_Token_Expression extends CPPP_Pattern_Abstract_Token {
     public $min_length, $max_length, $conditions;
     public function __construct($min_length, $max_length, $conditions) {
         $this->min_length = $min_length;
@@ -51,26 +51,26 @@ class CityPay_Pattern_Token_Expression extends CityPay_Pattern_Abstract_Token {
     }
     
     /*public function appendCondition($operator, $value) {      
-        $this->conditions[] = new CityPay_Pattern_Token_Condition(
+        $this->conditions[] = new CPPP_Pattern_Token_Condition(
                 $operator,
                 $value
             );
     }*/
 }
 
-class CityPay_Pattern_Token_Alpha extends CityPay_Pattern_Token_Expression {
+class CPPP_Pattern_Token_Alpha extends CPPP_Pattern_Token_Expression {
     public function __construct($arguments, $conditions) {
         parent::__construct($arguments[0], $arguments[0], $conditions);
     }
 }
 
-class CityPay_Pattern_Token_Numeric extends CityPay_Pattern_Token_Expression {
+class CPPP_Pattern_Token_Numeric extends CPPP_Pattern_Token_Expression {
     public function __construct($arguments, $conditions) {
         parent::__construct($arguments[0], $arguments[0], $conditions);
     }
 }
 
-class CityPay_Pattern_Parser {
+class CPPP_Pattern_Parser {
     
     const NO_ERROR = 0x00;
     const INPUT_EXHAUSTED = 0x01;
@@ -82,13 +82,13 @@ class CityPay_Pattern_Parser {
     private function _createNewPatternToken($type, $arguments = null, $conditions = null) {
         switch ($type) {
             case 'alpha':
-                return new CityPay_Pattern_Token_Alpha(
+                return new CPPP_Pattern_Token_Alpha(
                         $arguments,
                         $conditions
                     );
                 
             case 'numeric':
-                return new CityPay_Pattern_Token_Numeric(
+                return new CPPP_Pattern_Token_Numeric(
                         $arguments,
                         $conditions
                     );
@@ -399,9 +399,9 @@ class CityPay_Pattern_Parser {
                 return $r;
             }
             
-            $condition = new CityPay_Pattern_Token_Condition($_operator, $_operand);
+            $condition = new CPPP_Pattern_Token_Condition($_operator, $_operand);
         } else {
-            $condition = new CityPay_Pattern_Token_Condition($_operator);
+            $condition = new CPPP_Pattern_Token_Condition($_operator);
         }
         
         return self::NO_ERROR;
@@ -414,7 +414,7 @@ class CityPay_Pattern_Parser {
             $c = $pattern[$i];
             if ($c == '(') {
                 // compound condition
-                $conditions[] = new CityPay_Pattern_Token_Compound_Condition_Marker();
+                $conditions[] = new CPPP_Pattern_Token_Compound_Condition_Marker();
             } elseif ($c == ')') {
                 // TODO: create compound condition according to rules of precedence,
                 // whatever they are?
@@ -577,7 +577,7 @@ class CityPay_Pattern_Parser {
     }
 }
 
-class CityPay_Pattern {
+class CPPP_Pattern {
     
     private $patterns;
     
@@ -597,7 +597,7 @@ class CityPay_Pattern {
             $c = $_pattern[$i];
             if ($c == '{') {
                 if (!empty($_scratch)) {
-                    $_tokens[] = new CityPay_Pattern_Token_CharacterString($_scratch);
+                    $_tokens[] = new CPPP_Pattern_Token_CharacterString($_scratch);
                     $_scratch = '';
                 }
                 $pattern[] = _parsePatternTokenExpression($_pattern, $i, $i_max);

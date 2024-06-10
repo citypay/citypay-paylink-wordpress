@@ -4,20 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 require_once('class-citypay-library.php');
 
-class CityPay_PayLink_WP {
+class CPPP_WP {
 
 	private $pay_module;
 	private	$request_addr = array();
 	private $request_cart = array();
 	private $request_client = array();
 	private $request_config = array();
-
-	// Default CURL options
-	public $curl_opts = array(
-		CURLOPT_RETURNTRANSFER	=> true,
-		CURLOPT_SSL_VERIFYPEER	=> true,
-		CURLOPT_MAXREDIRS	=> 10
-	);
 
 	function __construct() {
 		$args = func_get_args();
@@ -67,7 +60,7 @@ class CityPay_PayLink_WP {
                 'required', 'placeholder', 'label', 'locked', 'fieldType'
             );            
         if (is_array($qualifiers)) {
-            $customParam = CityPay_Library::extractKeyValuesFromArray($qualifiers, $_qualifiers);
+            $customParam = CPPP_Library::extractKeyValuesFromArray($qualifiers, $_qualifiers);
         } else {
             $customParam = array();
         }
@@ -148,7 +141,7 @@ class CityPay_PayLink_WP {
 	public function getJSON() {
         // note, call to this function at line 120 results in PHP warnings for lack of
         // specified parameters; yet getJSON simply collates information that forms part of
-        // the current instance of CityPay_Paylink  
+        // the current instance of CPPP_Paylink  
 		$params=array_merge(
             $this->request_merchant,
             $this->request_cart,
@@ -159,64 +152,66 @@ class CityPay_PayLink_WP {
 		return json_encode($params);
 	}
 
-	public function getPaylinkURL($curl_options=null) {
-		if (!function_exists('curl_init')) {
-			throw new Exception('PayLink requires the CURL module to be installed. See http://php.net/manual/en/book.curl.php');
-		}
-		$json = $this->getJSON();
-		$this->debugLog($json);
-		$curl_opts = $this->curl_opts;	// Initial default CURL options
-		// Add in any CURL options sent as params to this function
-		if (isset($curl_options) && is_array($curl_options)) {
-			foreach($curl_options as $key => $value) {
-				$curl_opts[$key] = $value;
-			}
-		}
-		// Add the relevant data options
-        $curl_opts[CURLOPT_POST] = true;
-		$curl_opts[CURLOPT_POSTFIELDS] = $json;
-		$curl_opts[CURLOPT_RETURNTRANSFER] = true;
-		$curl_opts[CURLOPT_HTTPHEADER] = array(
-			'Accept: application/json',
-			'Content-Type: application/json;charset=UTF-8',
-			'Content-Length: ' . strlen($json));
-        $curl_opts[CURLOPT_VERBOSE] = true;
-        $curl_stderr = fopen('php://temp', 'w+');
-        $curl_opts[CURLOPT_STDERR] = $curl_stderr;
-		$ch = curl_init('https://secure.citypay.com/paylink3/create');
-		curl_setopt_array($ch, $curl_opts);
-		curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-        $response = curl_exec($ch);
-        if (empty($response))
-        {
-            rewind($curl_stderr);
-            $req_stderr = stream_get_contents($curl_stderr, 4096);
-            fclose($curl_stderr);
-            $req_info = curl_getinfo($ch);
-            $req_errno = curl_errno($ch);
-            $req_error = curl_error($ch);
-            curl_close($ch);
-            $this->debugLog("Request information - ".print_r($req_info, true));
-            $this->debugLog("Request errno - ".print_r($req_errno, true));
-            $this->debugLog("Request error - ".print_r($req_error, true));
-            $this->debugLog("cURL trace - ".print_r($req_stderr, true));
-            $this->debugLog("Response - ".print_r($response, true));
+    public function getPaylinkURL($http_options = null) {
+        $json = $this->getJSON();
+        $this->debugLog($json);
+
+        // Default HTTP options
+        $http_args = array(
+            'method'      => 'POST',
+            'body'        => $json,
+            'timeout'     => 45,
+            'redirection' => 5,
+            'httpversion' => '1.0',
+            'blocking'    => true,
+            'headers'     => array(
+                'Accept'        => 'application/json',
+                'Content-Type'  => 'application/json;charset=UTF-8',
+                'Content-Length' => strlen($json)
+            ),
+            'cookies'     => array(),
+            'sslverify'   => true,
+        );
+
+        // Merge with any HTTP options passed to the function
+        if (isset($http_options) && is_array($http_options)) {
+            $http_args = wp_parse_args($http_options, $http_args);
+        }
+
+        // Send the request to the Paylink URL
+        $response = wp_remote_post('https://secure.citypay.com/paylink3/create', $http_args);
+
+        // Check for errors
+        if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            $this->debugLog("HTTP request error: $error_message");
             throw new Exception('Error generating PayLink token');
         }
-        curl_close($ch);
-        $results = json_decode($response,true);
-        if ($results['result']!=1) {
-                $this->debugLog($response);
-                $this->debugLog(print_r($results,true));
-                throw new Exception('Invalid response from PayLink');
+
+        // Get the response body
+        $response_body = wp_remote_retrieve_body($response);
+
+        // Log response for debugging
+        $this->debugLog("Response: " . print_r($response_body, true));
+
+        // Decode the JSON response
+        $results = json_decode($response_body, true);
+
+        // Check for a valid response
+        if ($results['result'] != 1) {
+            $this->debugLog("Invalid response: " . print_r($results, true));
+            throw new Exception('Invalid response from PayLink');
         }
-        $paylink_url=$results['url'];
+
+        $paylink_url = $results['url'];
+
         if (empty($paylink_url)) {
-                $this->debugLog(print_r($results,true));
-                throw new Exception('No URL obtained from PayLink');
+            $this->debugLog("No URL obtained: " . print_r($results, true));
+            throw new Exception('No URL obtained from PayLink');
         }
+
         return $paylink_url;
-	}
+    }
 
 	public function validPostbackIP($remote_addr,$allowed_ip) {
 		if (empty($allowed_ip)) {
@@ -234,20 +229,42 @@ class CityPay_PayLink_WP {
 		return true;
 	}
 
-	public function getPostbackData() {
-		// Check response data - need the raw post data, can't use the processed post value as data is
-		// in json format and not name/value pairs
-		$HTTP_RAW_POST_DATA = isset($HTTP_RAW_POST_DATA) ? $HTTP_RAW_POST_DATA : file_get_contents("php://input");
-		if (empty($HTTP_RAW_POST_DATA)) {
-			return null;
-		}
-		$postback_data = array_change_key_case(json_decode($HTTP_RAW_POST_DATA,true), CASE_LOWER);
-		if (empty($postback_data)) {
-			return null;
-		}
-		// $this->debugLog(print_r($postback_data,true));
-		return $postback_data;
-	}
+    public function getPostbackData() {
+        // Get the raw POST data
+        $raw_post_data = file_get_contents("php://input");
+
+        // Check if the raw POST data is empty
+        if (empty($raw_post_data)) {
+            return null;
+        }
+
+        // Decode the JSON data
+        $postback_data = json_decode($raw_post_data, true);
+
+        // Check if the JSON decoding was successful and the result is an array
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($postback_data)) {
+            return null;
+        }
+
+        // Convert all keys to lowercase
+        $postback_data = array_change_key_case($postback_data, CASE_LOWER);
+
+        // Sanitize the data
+        $sanitized_data = array();
+        foreach ($postback_data as $key => $value) {
+            // Sanitize based on the type of data
+            if (is_email($value)) {
+                $sanitized_data[$key] = sanitize_email($value);
+            } elseif (is_array($value)) {
+                // Recursively sanitize arrays
+                $sanitized_data[$key] = array_map('sanitize_text_field', $value);
+            } else {
+                $sanitized_data[$key] = sanitize_text_field($value);
+            }
+        }
+
+        return $sanitized_data;
+    }
 
 	public function isAuthorised($postback_data) {
 		$result=$postback_data['authorised'];

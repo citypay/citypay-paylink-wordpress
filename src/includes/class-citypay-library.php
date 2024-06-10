@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-class CityPay_Library {
+class CPPP_Library {
     public static function extractKeyValuesFromArray($array, $keys) {
         if (!is_array($array) && !is_array($keys)) {
             return;

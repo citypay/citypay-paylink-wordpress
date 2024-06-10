@@ -34,9 +34,8 @@ accessed from the WordPress console.
 
 # Minimum requirements
 
-* PHP version 5.2.4 or greater (Tested up to: 8.2.4) with libcurl support
+* PHP version 5.2.4 or greater (Tested up to: 8.2.4)
 * MySQL version 5.0 or greater
-* libcurl version 7.10.5 or later with SSL / TLS support
 * openssl, to current patch levels
 * WordPress 4.0 or greater (Tested up to: 6.3.2)
 
@@ -83,19 +82,19 @@ messages as follows -
         [citypay-payform-field name="email" type="email-address" label="Email Address" order="2"]
         [citypay-payform-field name="identifier" type="identifier" label="Invoice Number" pattern="AAnnnn" order="3" passthrough="true"]
         [citypay-payform-amount-field name="amount" label="Amount" maximum="150.00" minimum="1.00" order="4"]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING"]
+            [error-message handle="CPPP_AMOUNT_PARSE_ERROR_EMPTY_STRING"]
                 You have specified an empty string (testing "").
             [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER"]
+            [error-message handle="CPPP_AMOUNT_PARSE_ERROR_INVALID_CHARACTER"]
                 You have specified an invalid character.
             [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION"]
+            [error-message handle="CPPP_AMOUNT_PARSE_ERROR_INVALID_PRECISION"]
                 You have put too many digits after the decimal point.
             [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE"]
+            [error-message handle="CPPP_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE"]
                 You have specified an amount that less than that the practice is able to accept.
             [/error-message]
-            [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE"]
+            [error-message handle="CPPP_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE"]
                 You have specified an amount that more than that the practice is able to accept.
             [/error-message]
         [/citypay-payform-amount-field]
@@ -282,39 +281,39 @@ following shortcode attributes -
 
 `handle`: refers to the handle for the relevant error message as follows -
 
-`CP_PAYLINK_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING`: the error generated
+`CPPP_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING`: the error generated
     if the value submitted to a text field is an empty string.
 
-`CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING`: the error
+`CPPP_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING`: the error
     generated if the value submitted to a text field where the
     `type` is set to `identifier` is an empty string.
 
-`CP_PAYLINK_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID`: the error
+`CPPP_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID`: the error
     generated if the value submitted to a text field where the
     `type` is set to `identifier` is, when parsed by reference to
     the `pattern` indicated for the shortcode, found to be invalid.
 
-`CP_PAYLINK_NAME_FIELD_PARSE_ERROR_EMPTY_STRING`: the error generated
+`CPPP_NAME_FIELD_PARSE_ERROR_EMPTY_STRING`: the error generated
     if the value submitted to a text field where the `type` is set
     to `customer-name` is an empty string.
 
-`CP_PAYLINK_NAME_FIELD_PARSE_ERROR_NOT_VALID`: the error generated
+`CPPP_NAME_FIELD_PARSE_ERROR_NOT_VALID`: the error generated
     if the value submitted to a text field where the `type` is set
     to `customer-name` is, when parsed, found to be invalid.
 
-`CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING`: the error
+`CPPP_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING`: the error
     generated if the value submitted to a text field where the `type`
     is set to `email-address` is an empty string.
 
-`CP_PAYLINK_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID`: the error
+`CPPP_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID`: the error
     generated if the value submitted to a text field where the `type`
     is set to `email-address` is, when parsed, found to be invalid.
 
-`CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING`: the error generated if
+`CPPP_AMOUNT_PARSE_ERROR_EMPTY_STRING`: the error generated if
     the value submitted to an amount field is found to be invalid. A
     value is invalid if it cannot be converted to a numerical value.
 
-`CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER`: the error generated
+`CPPP_AMOUNT_PARSE_ERROR_INVALID_CHARACTER`: the error generated
     if the value submitted to an amount field is found to contain one
     or more invalid characters such as upper and lower letters (A-Z, and
     a-z respectively), and punctuation such as ',' (commas), '£' (pound
@@ -323,39 +322,39 @@ following shortcode attributes -
     period (.) being the decimal point indicating the fractional
     component of an amount.
 
-`CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION`: the error generated
+`CPPP_AMOUNT_PARSE_ERROR_INVALID_PRECISION`: the error generated
     if the value submitted to an amount field has been specified, for
     the relevant currency, to an invalid precision. This error typically
     occurs if the fractional component of the amount has been specified
     to more decimal places than expected for the relevant currency.
 
-`CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE`: the error
+`CPPP_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE`: the error
     generated if the value submitted to a currency amount-based
     is below the specified minimum value.
 
-`CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE`: the error
+`CPPP_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE`: the error
     generated if the value submitted to a currency amount-based
     is above the specified maximum value.
 
-`CP_PAYLINK_TERMS_AND_CONDITIONS_NOT_ACCEPTED`: the error generated
+`CPPP_TERMS_AND_CONDITIONS_NOT_ACCEPTED`: the error generated
     if a checkbox where the `type` is set to `terms-and-conditions`
     is left unchecked on submission of the relevant form.
 
 Example:
 
-    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_EMPTY_STRING"]
+    [error-message handle="CPPP_AMOUNT_PARSE_ERROR_EMPTY_STRING"]
         You have specified an empty string (testing "").
     [/error-message]
-    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_CHARACTER"]
+    [error-message handle="CPPP_AMOUNT_PARSE_ERROR_INVALID_CHARACTER"]
         You have specified an invalid character.
     [/error-message]
-    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_INVALID_PRECISION"]
+    [error-message handle="CPPP_AMOUNT_PARSE_ERROR_INVALID_PRECISION"]
         You have put too many digits after the decimal point.
     [/error-message]
-    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE"]
+    [error-message handle="CPPP_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE"]
         You have specified an amount that less than that the practice is able to accept.
     [/error-message]
-    [error-message handle="CP_PAYLINK_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE"]
+    [error-message handle="CPPP_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE"]
         You have specified an amount that more than that the practice is able to accept.
     [/error-message]
 

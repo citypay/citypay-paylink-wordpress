@@ -1,6 +1,6 @@
 <?php
 
-class CityPay_Logger
+class CPPP_Logger
 {
     public static function logFilePathName($plugin_file_path) {
         return dirname($plugin_file_path)

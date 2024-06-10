@@ -1,6 +1,6 @@
 <?php
 
-class cp_paylink_config_stack
+class CPPP_config_stack
 {
     private $stack;
     private $ptr;
@@ -42,7 +42,7 @@ class cp_paylink_config_stack
         $fields = array();
         $config = &$this->peek();
         foreach ($config as $name => $value) {
-            if ($value instanceof cp_paylink_field) {
+            if ($value instanceof CPPP_field) {
                 $fields[$name] = $value;
             }
         }
