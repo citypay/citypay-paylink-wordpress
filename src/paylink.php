@@ -64,31 +64,31 @@ define('CPPP_DEFAULT_ERROR_MESSAGE', 'CPPP_default_error_messages');
 
 
 $CPPP_default_error_messages = array(
-    CPPP_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING
+    'CPPP_TEXT_FIELD_PARSE_ERROR_EMPTY_STRING'
     => __('This field cannot be empty'),
-    CPPP_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING
+    'CPPP_IDENTIFIER_FIELD_PARSE_ERROR_EMPTY_STRING'
     => __('This field cannot be empty.'),
-    CPPP_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID
+    'CPPP_IDENTIFIER_FIELD_PARSE_ERROR_NOT_VALID'
     => __('This field does not contain an acceptable value.'),
-    CPPP_NAME_FIELD_PARSE_ERROR_EMPTY_STRING
+    'CPPP_NAME_FIELD_PARSE_ERROR_EMPTY_STRING'
     => __('This field cannot be empty.'),
-    CPPP_NAME_FIELD_PARSE_ERROR_NOT_VALID
+    'CPPP_NAME_FIELD_PARSE_ERROR_NOT_VALID'
     => __('This field does not contain an acceptable value. Please enter a person\'s name of the form <b>&lt;firstname&gt; &lt;lastname&gt;</b>.'),
-    CPPP_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING
+    'CPPP_EMAIL_ADDRESS_FIELD_PARSE_ERROR_EMPTY_STRING'
     => __('This field cannot be empty.'),
-    CPPP_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID
+    'CPPP_EMAIL_ADDRESS_FIELD_PARSE_ERROR_NOT_VALID'
     => __('This field does not contain an acceptable value. Please enter a valid email address of the form <b>&lt;name&gt;@&lt;domain-name&gt;</b>.'),
-    CPPP_AMOUNT_PARSE_ERROR_EMPTY_STRING
+    'CPPP_AMOUNT_PARSE_ERROR_EMPTY_STRING'
     => __('This field cannot be empty.'),
-    CPPP_AMOUNT_PARSE_ERROR_INVALID_CHARACTER
+    'CPPP_AMOUNT_PARSE_ERROR_INVALID_CHARACTER'
     => __('This field contains an invalid character; only numeric digits and a decimal point are acceptable.'),
-    CPPP_AMOUNT_PARSE_ERROR_INVALID_PRECISION
+    'CPPP_AMOUNT_PARSE_ERROR_INVALID_PRECISION'
     => __('This field contains a value with too many digits appearing after the decimal point, and is therefore unacceptable.'),
-    CPPP_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE
+    'CPPP_AMOUNT_PARSE_ERROR_BELOW_MINIMUM_VALUE'
     => __('This field contains an amount that is below the lowest acceptable value for transactions processed using this service.'),
-    CPPP_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE
+    'CPPP_AMOUNT_PARSE_ERROR_ABOVE_MAXIMUM_VALUE'
     => __('This field contains an amount that is more than the maxmimum acceptable value for transactions processed using this service.'),
-    CPPP_TERMS_AND_CONDITIONS_NOT_ACCEPTED
+    'CPPP_TERMS_AND_CONDITIONS_NOT_ACCEPTED'
     => __('You must accept the terms and conditions to use this service.')
 );
 

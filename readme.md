@@ -34,7 +34,7 @@ accessed from the WordPress console.
 * MySQL version 5.0 or greater
 * libcurl version 7.10.5 or later with SSL / TLS support
 * openssl, to current patch levels
-* WordPress 4.0 or greater (Tested up to: 6.2.2)
+* WordPress 4.0 or greater (Tested up to: 6.5)
 
 ### Automatic installation
 
@@ -453,6 +453,27 @@ Paylink service.
 
 The location of the log file is provided on the plugin settings form.
 
+## Use of Third-Party Services
+This plugin relies on a third-party service to function correctly. Below are the details regarding the service and the circumstances under which it is used:
+
+### External Service
+Our plugin communicates with an external service to process payments securely. The specific service used is:
+
+- Service Name: CityPay PayLink
+- Service URL: https://docs.citypay.com/paylink-overview
+
+### Purpose
+The plugin reaches out to the CityPay PayLink service to create payment links for processing transactions. This is necessary to securely handle and process payments on your website.
+
+### Data Transmission
+When you use this plugin, certain data will be sent to the CityPay PayLink service for the purpose of creating and managing payment links. The data sent includes payment details necessary to process the transaction.
+
+### Legal Considerations
+We understand the importance of transparency and legal compliance. Therefore, we provide the following links to the CityPay privacy policy to ensure that you are aware of how your data is handled:
+
+- Privacy Policy: https://www.citypay.com/privacy-policy/
+
+If you have any questions or concerns about how this plugin handles data or interacts with the CityPay service, please contact us at <support@citypay.com>.
 
 ## Frequently Asked Questions
 
